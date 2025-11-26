@@ -110,38 +110,25 @@
 <div class="sidebar" id="sidebar">
     <h2>SuperAdmin</h2>
 
-    <a href="{{ url_for('superadmin.admin_area') }}">
+    <a href="{{ url_for('main.department_dashboard') }}">
         <i class="fa fa-gauge"></i><span>Dashboard</span>
     </a>
 
-    <a href="{{ url_for('main.view_records') }}">
+    <a href="{{ url_for('main.department_documents') }}">
         <i class="fa fa-file"></i><span>Documents</span>
     </a>
 
-    <a href="{{ url_for('main.view_records') }}">
+    <a href="{{ url_for('main.department_tracking') }}">
         <i class="fa fa-location-dot"></i><span>Tracking</span>
     </a>
 
-    <a href="{{ url_for('main.dashboard') }}">
-        <i class="fa fa-chart-pie"></i><span>Analytics</span>
+    <a href="{{ url_for('main.department_notifications') }}">
+        <i class="fa fa-bell"></i><span>Notifications</span>
     </a>
-
-    <a href="{{ url_for('superadmin.add_record') }}">
-        <i class="fa fa-building"></i><span>Departments</span>
-    </a>
-
-    <a href="{{ url_for('superadmin.admin_area') }}">
-        <i class="fa fa-users"></i><span>Users</span>
-    </a>
-
-    <a href="{{ url_for('main.view_records') }}">
-        <i class="fa fa-clock"></i><span>Logs</span>
-    </a>
-
     <a href="{{ url_for('auth.logout') }}">
         <i class="fa fa-sign-out"></i><span>Logout</span>
     </a>
-</div>
+</div><!--  -->
 
 <!-- HEADER -->
 <div class="header" id="header">
@@ -149,10 +136,10 @@
     <h3>Document Tracking System – SuperAdmin</h3>
 </div>
 
-<!-- CONTENT -->
-<div class="content" id="content">
-    <h1>Welcome to SuperAdmin Dashboard</h1>
-    <p>Select a menu item from the sidebar.</p>
+<!-- MAIN CONTENT WITH IFRAME -->
+<div class="content">
+    {% block content %}
+    {% endblock %}
 </div>
 
 <script>

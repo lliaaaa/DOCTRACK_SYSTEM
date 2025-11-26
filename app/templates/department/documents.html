@@ -1,19 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>My Documents</title>
-    
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+{% extends 'department/index.html' %}
+{% block content %}
     <style>
         body { font-family: Arial; margin: 0; background: #f3f3f3; }
-        .sidebar { width: 220px; background: #1a237e; color: white; height: 100vh; position: fixed; }
-        .sidebar h2 { padding: 20px; text-align: center; }
-        .sidebar a { display: block; padding: 12px 20px; color: white; text-decoration: none; }
-        .sidebar a:hover { background: #303f9f; }
-        .content { padding: 20px; }
+        .content {
+            margin-left: 140px;
+            padding: 20px;
+            transition: 0.3s;
+        }
         table { width: 100%; background: white; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background: #eeeeee; }
@@ -62,6 +55,4 @@
         </tr>
     </table>
 </div>
-
-</body>
-</html>
+{% endblock %}

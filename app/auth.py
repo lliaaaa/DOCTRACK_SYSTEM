@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from .models import User
 from . import db
@@ -7,25 +8,16 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        email = request.form["email"].lower()
-        password = request.form["password"]
-        password2 = request.form["password2"]
 
-        if password != password2:
-            flash("Passwords do not match!", "danger")
-            return redirect(url_for("auth.register"))
+        password = request.form.get("password")
 
-        if User.query.filter_by(email=email).first():
-            flash("Email already exists.", "warning")
-            return redirect(url_for("auth.register"))
+        password_regex = r'^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
 
-        user = User(email=email)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-
-        flash("Registration successful! Please login.", "success")
-        return redirect(url_for("auth.login"))
+        if not re.match(password_regex, password):
+            flash("Password must be at least 8 characters long, include one uppercase letter, one number, and one special character.", "danger")
+            return redirect(url_for("main.register"))
+        flash("Account created!", "success")
+        return redirect(url_for("main.home"))
 
     return render_template("register.html")
 
@@ -42,13 +34,11 @@ def login():
         if user and user.check_password(password):
             session["user_id"] = user.id
             session["role"] = user.role
-
-            # Redirect based on role
             if user.role == "admin":
                 return redirect(url_for("main.superadmin_home"))
 
             else:
-                return redirect(url_for("main.co_offices_home"))
+                return redirect(url_for("main.department_home"))
 
         flash("Invalid email or password", "danger")
 

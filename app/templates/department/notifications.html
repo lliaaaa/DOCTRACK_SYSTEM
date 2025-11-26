@@ -1,8 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Notifications</title>
+{% extends 'department/index.html' %}
+{% block content %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,8 +8,9 @@
         }
 
         .content {
+            margin-left: 140px;
             padding: 20px;
-            margin: 0; /* important for iframe */
+            transition: 0.3s;
         }
 
         h1 {
@@ -86,5 +84,4 @@
         </div>
         -->
     </div>
-</body>
-</html>
+{% endblock %}

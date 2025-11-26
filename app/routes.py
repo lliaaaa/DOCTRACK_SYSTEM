@@ -2,25 +2,32 @@ from flask import Blueprint, request, render_template, flash, redirect, url_for
 from .decorators import login_required, role_required
 from .models import Record
 from . import db
+from sqlalchemy import func
 
 bp = Blueprint("main", __name__)
 
-# -----------------------------
+# --------------------------------
 # HOME
-# -----------------------------
+# --------------------------------
 @bp.route("/")
 def home():
     return render_template("portal.html")
 
 
-# -----------------------------
-# DASHBOARD (requires login)
-# -----------------------------
-@bp.route("/dashboard")
+# --------------------------------
+# SUPERADMIN AREA (ADMIN ONLY)
+# --------------------------------
+@bp.route("/admin")
 @login_required
-def dashboard():
-    from sqlalchemy import func
+@role_required("admin")
+def superadmin_home():
+    return render_template("superadmin/index.html")
 
+
+@bp.route("/admin/dashboard")
+@login_required
+@role_required("admin")
+def superadmin_dashboard():
     stats = {
         "total_documents": Record.query.count(),
         "pending": Record.query.filter_by(status="Pending").count(),
@@ -40,78 +47,66 @@ def dashboard():
 
     latest = Record.query.order_by(Record.date_in.desc()).limit(5).all()
 
-    return render_template("dashboard.html", stats=stats, charts=charts, latest=latest)
+    return render_template("superadmin/dashboard.html", stats=stats, charts=charts, latest=latest)
 
 
-
-# -----------------------------
-# SUPERADMIN AREA
-# -----------------------------
-@bp.route("/superadmin")
-@login_required
-@role_required("admin")
-def superadmin_home():
-    return render_template("superadmin/index.html")
-@bp.route("/superadmin/dashboard")
-@login_required
-@role_required("admin")
-def superadmin_dashboard():
-    from sqlalchemy import func
-
-    stats = {
-        "total_documents": Record.query.count(),
-        "pending": Record.query.filter_by(status="Pending").count(),
-        "completed": Record.query.filter_by(status="Completed").count(),
-        "overdue": Record.query.filter(Record.date_returned == None).count()
-    }
-
-    return render_template("superadmin/dashboard.html", stats=stats)
-
-
-@bp.route("/superadmin/documents")
+@bp.route("/admin/documents")
 @login_required
 @role_required("admin")
 def superadmin_documents():
     return render_template("superadmin/documents.html")
-@bp.route("/superadmin/tracking")
+
+
+@bp.route("/admin/tracking")
 @login_required
 @role_required("admin")
 def superadmin_tracking():
+    # SAMPLE STATIC DATA
     document = {
         "id": "DOC-001",
         "title": "Purchase Request - Laptops",
         "timeline": [
-            {"status": "To-Review", "dept": "IT", "date": "2025-11-10 09:00", "remarks": "Newly submitted document"},
-            {"status": "Processing", "dept": "IT", "date": "2025-11-10 11:30", "remarks": "Started processing"},
-            {"status": "For Approval", "dept": "Finance", "date": "2025-11-11 10:30", "remarks": "Awaiting budget approval"},
-            {"status": "Completed", "dept": "IT", "date": "2025-11-12 15:45", "remarks": "Approved and finalized"}
+            {"status": "To-Review", "dept": "IT", "date": "2025-11-10 09:00", "remarks": "Newly submitted"},
+            {"status": "Processing", "dept": "IT", "date": "2025-11-10 11:30", "remarks": "Processing started"},
+            {"status": "For Approval", "dept": "Finance", "date": "2025-11-11 10:30", "remarks": "Awaiting approval"},
+            {"status": "Completed", "dept": "IT", "date": "2025-11-12 15:45", "remarks": "Completed"},
         ]
     }
 
-    return render_template(
-        "superadmin/tracking.html",
-        document=document
-    )
-@bp.route("/superadmin/analytics")
+    return render_template("superadmin/tracking.html", document=document)
+
+
+@bp.route("/admin/analytics")
 @login_required
 @role_required("admin")
 def superadmin_analytics():
     return render_template("superadmin/analytics.html")
-@bp.route("/superadmin/departments")
+
+
+@bp.route("/admin/departments")
 @login_required
 @role_required("admin")
 def superadmin_departments():
     return render_template("superadmin/departments.html")
-@bp.route("/superadmin/users")
+
+
+@bp.route("/admin/users")
 @login_required
 @role_required("admin")
 def superadmin_users():
     return render_template("superadmin/users.html")
-@bp.route("/superadmin/logs")
+
+
+@bp.route("/admin/logs")
 @login_required
 @role_required("admin")
 def superadmin_logs():
     return render_template("superadmin/logs.html")
+
+
+# --------------------------------
+# ADD / EDIT / DELETE RECORDS (ADMIN)
+# --------------------------------
 @bp.route('/superadmin/add', methods=['GET', 'POST'])
 @login_required
 @role_required("admin")
@@ -136,10 +131,9 @@ def add_record():
         db.session.commit()
 
         flash('Record added successfully!', 'success')
-        return redirect(url_for('main.view_records'))
+        return redirect(url_for('main.superadmin_documents'))
 
     return render_template("superadmin/add.html")
-
 
 
 @bp.route('/superadmin/edit/<int:id>', methods=['GET', 'POST'])
@@ -164,10 +158,9 @@ def edit_record(id):
 
         db.session.commit()
         flash('Record updated successfully!', 'success')
-        return redirect(url_for('main.view_records'))
+        return redirect(url_for('main.superadmin_documents'))
 
-    return render_template('superadmin/edit.html', record=record)
-
+    return render_template("superadmin/edit.html", record=record)
 
 
 @bp.route('/superadmin/delete/<int:id>')
@@ -179,24 +172,59 @@ def delete_record(id):
     db.session.commit()
 
     flash('Record deleted successfully!', 'success')
-    return redirect(url_for('main.view_records'))
+    return redirect(url_for('main.superadmin_documents'))
 
 
-
-# -----------------------------
-# CO-OFFICES SECTION
-# -----------------------------
-@bp.route("/co-offices")
+# --------------------------------
+# DEPARTMENT USER AREA
+# --------------------------------
+@bp.route("/department")
 @login_required
-@role_required("co_office")
-def co_offices_home():
-    return render_template("co-offices/index.html")
+@role_required("user")
+def department_home():
+    return render_template("department/index.html")
 
 
-
-@bp.route("/co-offices/records")
+@bp.route("/department/dashboard")
 @login_required
-@role_required("co_office")
-def co_offices_view_records():
-    records = Record.query.all()
-    return render_template("co-offices/view.html", records=records)
+@role_required("user")
+def department_dashboard():
+    stats = {
+        "total_documents": Record.query.count(),
+        "pending": Record.query.filter_by(status="Pending").count(),
+        "completed": Record.query.filter_by(status="Completed").count(),
+        "overdue": Record.query.filter(Record.date_returned == None).count()
+    }
+    return render_template("department/dashboard.html", stats=stats)
+
+
+@bp.route("/department/documents")
+@login_required
+@role_required("user")
+def department_documents():
+    return render_template("department/documents.html")
+
+
+@bp.route("/department/tracking")
+@login_required
+@role_required("user")
+def department_tracking():
+    document = {
+        "id": "DOC-001",
+        "title": "Purchase Request - Laptops",
+        "timeline": [
+            {"status": "To-Review", "dept": "IT", "date": "2025-11-10 09:00", "remarks": "Newly submitted"},
+            {"status": "Processing", "dept": "IT", "date": "2025-11-10 11:30", "remarks": "Processing"},
+            {"status": "For Approval", "dept": "Finance", "date": "2025-11-11 10:30", "remarks": "Awaiting approval"},
+            {"status": "Completed", "dept": "IT", "date": "2025-11-12 15:45", "remarks": "Completed"},
+        ]
+    }
+
+    return render_template("department/tracking.html", document=document)
+
+
+@bp.route("/department/notifications")
+@login_required
+@role_required("user")
+def department_notifications():
+    return render_template("department/notifications.html")
