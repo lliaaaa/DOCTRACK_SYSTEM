@@ -15,6 +15,7 @@ def role_required(*allowed_roles):
         @wraps(f)
         def wrapper(*args, **kwargs):
             role = session.get("role")
+            print("SESSION ROLE:", role)
             if role not in allowed_roles:
                 flash("Access denied.", "danger")
                 return redirect(url_for("main.dashboard"))

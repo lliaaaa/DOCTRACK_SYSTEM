@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Users — Superadmin</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+{% extends 'superadmin/index.html' %}
+{% block content %}
 <style>
 body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
 .page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
@@ -100,6 +96,4 @@ function deleteUser(id){
 // Initial render
 renderUsers();
 </script>
-
-</body>
-</html>
+{% endblock %}

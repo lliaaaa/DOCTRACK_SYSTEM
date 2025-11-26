@@ -148,10 +148,6 @@
     <a href="{{ url_for('auth.logout') }}">
         <i class="fa fa-sign-out"></i><span>Logout</span>
     </a>
-    <!-- LOGOUT AT BOTTOM -->
-    <div class="logout-section">
-        <a href="#" onclick="logout()"><i class="fa fa-sign-out"></i><span>Logout</span></a>
-    </div>
 </div><!--  -->
 
 <!-- HEADER -->
@@ -161,10 +157,10 @@
 </div>
 
 <!-- MAIN CONTENT WITH IFRAME -->
-<div class="content" id="content">
-    <iframe id="mainFrame" src="dashboard.html"></iframe>
+<div class="content">
+    {% block content %}
+    {% endblock %}
 </div>
-
 
 <script>
 function toggleSidebar() {

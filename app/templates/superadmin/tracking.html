@@ -1,75 +1,248 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>SuperAdmin Panel</title>
-    <style>
+{% extends 'superadmin/index.html' %}
+{% block content %} <style>
+<style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f4f4f4;
-        }
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f4f4f4;
+    }
 
-        /* Main Content */
-        .content {
-            padding: 0;
-            margin-left: 20px;
-            transition: 0.3s;
-            height: calc(100vh - 60px);
-        }
+    /* HEADER */
+    .page-header {
+        padding: 18px 20px;
+        background: white;
+        border-bottom: 1px solid #e3e3e3;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
 
-        .content.collapsed {
-            margin-left: 70px;
-        }
+    .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-        /* Toggle Button */
-        .toggle-btn {
-            cursor: pointer;
-            margin-right: 15px;
-        }
+    .controls input,
+    .controls select {
+        padding: 9px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: white;
+        min-width: 160px;
+    }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-    </style>
+    .btn {
+        padding: 10px 16px;
+        background: #b71c1c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+    }
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    .btn:hover {
+        background: #8e1515;
+    }
 
+    /* TIMELINE CONTAINER FIX */
+    #timelineContainer {
+        background: white;
+        margin: 20px;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    /* TIMELINE BASE */
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+        margin-top: 10px;
+        padding-left: 20px;
+    }
+
+    .timeline::before {
+        content: "";
+        position: absolute;
+        left: 34px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #d3d3d3;
+        border-radius: 2px;
+    }
+
+    /* TIMELINE STEP */
+    .timeline-step {
+        padding: 14px 16px 14px 60px;
+        background: #fcfcfc;
+        border-radius: 8px;
+        position: relative;
+        border: 1px solid #e8e8e8;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .timeline-step::before {
+        content: "";
+        position: absolute;
+        left: 25px;
+        top: 18px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ccc;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #ccc;
+    }
+
+    .timeline-step h4 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .timeline-step p {
+        margin: 3px 0;
+        font-size: 14px;
+        color: #555;
+        line-height: 1.4;
+    }
+
+    .small {
+        font-size: 13px;
+        color: #666;
+    }
+
+    /* COLOR VARIANTS */
+    .timeline-step.toreview {
+        border-left: 4px solid #6c757d;
+    }
+
+    .timeline-step.toreview::before {
+        background: #6c757d;
+        box-shadow: 0 0 0 2px #6c757d;
+    }
+
+    .timeline-step.processing {
+        border-left: 4px solid #17a2b8;
+    }
+
+    .timeline-step.processing::before {
+        background: #17a2b8;
+        box-shadow: 0 0 0 2px #17a2b8;
+    }
+
+    .timeline-step.forapproval {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .timeline-step.forapproval::before {
+        background: #0d6efd;
+        box-shadow: 0 0 0 2px #0d6efd;
+    }
+
+    .timeline-step.completed {
+        border-left: 4px solid #198754;
+    }
+
+    .timeline-step.completed::before {
+        background: #198754;
+        box-shadow: 0 0 0 2px #198754;
+    }
+</style>
 </head>
 
 <body>
 
+    <div class="page-header">
+        <div>
+            <h2 style="margin:0 0 6px 0">Document Tracking</h2>
+            <div class="small">Select a document to view its status timeline</div>
+        </div>
 
+        <div class="controls">
+            <select id="selectDoc" onchange="renderTimeline()">
+                <option value="">Select document</option>
+            </select>
+            <button class="btn">Track</button>
+        </div>
+    </div>
 
-<!-- HEADER -->
-<div class="header" id="header">
-    <i class="fa fa-bars toggle-btn" onclick="toggleSidebar()"></i>
-    <h3>Document Tracking System – SuperAdmin</h3>
-</div>
+    <script>
+        const documents = [
+            {
+                id: "DOC-001",
+                title: "Purchase Request - Laptops",
+                timeline: [
+                    { status: "To-Review", dept: "IT", date: "2025-11-10 09:00", remarks: "Newly submitted document" },
+                    { status: "Processing", dept: "IT", date: "2025-11-10 11:30", remarks: "Started processing" },
+                    { status: "For Approval", dept: "Finance", date: "2025-11-11 10:30", remarks: "Awaiting budget approval" },
+                    { status: "Completed", dept: "IT", date: "2025-11-12 15:45", remarks: "Approved and finalized" }
+                ]
+            },
+            {
+                id: "DOC-002",
+                title: "Budget Proposal 2026",
+                timeline: [
+                    { status: "To-Review", dept: "Accounting", date: "2025-11-08 08:20", remarks: "Draft created" },
+                    { status: "Processing", dept: "Accounting", date: "2025-11-08 12:00", remarks: "Checked for completeness" },
+                    { status: "For Approval", dept: "Superadmin", date: "2025-11-09 11:10", remarks: "Sent for approval" }
+                ]
+            }
+        ];
 
-<!-- MAIN CONTENT WITH IFRAME -->
-<div class="content" id="content">
-    <iframe id="mainFrame" src="dashboard.html"></iframe>
-</div>
+        // Populate select dropdown
+        const selectDoc = document.getElementById("selectDoc");
+        documents.forEach(doc => {
+            const option = document.createElement("option");
+            option.value = doc.id;
+            option.textContent = `${doc.id} - ${doc.title}`;
+            selectDoc.appendChild(option);
+        });
 
+        function renderTimeline() {
+            const container = document.getElementById("timelineContainer");
+            const searchVal = document.getElementById("searchInput").value.toLowerCase();
+            const selectedId = selectDoc.value;
 
-<script>
-function toggleSidebar() {
-    document.getElementById("sidebar").classList.toggle("collapsed");
-    document.getElementById("header").classList.toggle("collapsed");
-    document.getElementById("content").classList.toggle("collapsed");
-}
+            container.innerHTML = "";
 
-function loadPage(page) {
-    document.getElementById("mainFrame").src = page;
-}
-function logout() {
-    alert("Logout Successful!")
-}
-</script>
+            let doc;
+            if (selectedId) {
+                doc = documents.find(d => d.id === selectedId);
+            } else if (searchVal) {
+                doc = documents.find(d => (d.id.toLowerCase() + d.title.toLowerCase()).includes(searchVal));
+            }
 
-</body>
-</html>
+            if (!doc) {
+                container.innerHTML = `<p class="small">No document selected or found.</p>`;
+                return;
+            }
+
+            const timelineDiv = document.createElement("div");
+            timelineDiv.className = "timeline";
+
+            doc.timeline.forEach(step => {
+                const stepDiv = document.createElement("div");
+                stepDiv.className = `timeline-step ${step.status.toLowerCase().replace(" ", "")}`;
+                stepDiv.innerHTML = `<h4>${step.status}</h4>
+                             <p><strong>Department:</strong> ${step.dept}</p>
+                             <p><strong>Date:</strong> ${step.date}</p>
+                             <p><strong>Remarks:</strong> ${step.remarks}</p>`;
+                timelineDiv.appendChild(stepDiv);
+            });
+
+            container.appendChild(timelineDiv);
+        }
+    </script>
+    {% endblock %}

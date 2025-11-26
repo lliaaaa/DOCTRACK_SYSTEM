@@ -56,7 +56,18 @@ def superadmin_home():
 @login_required
 @role_required("admin")
 def superadmin_dashboard():
-    return render_template("superadmin/dashboard.html")
+    from sqlalchemy import func
+
+    stats = {
+        "total_documents": Record.query.count(),
+        "pending": Record.query.filter_by(status="Pending").count(),
+        "completed": Record.query.filter_by(status="Completed").count(),
+        "overdue": Record.query.filter(Record.date_returned == None).count()
+    }
+
+    return render_template("superadmin/dashboard.html", stats=stats)
+
+
 @bp.route("/superadmin/documents")
 @login_required
 @role_required("admin")
@@ -66,7 +77,21 @@ def superadmin_documents():
 @login_required
 @role_required("admin")
 def superadmin_tracking():
-    return render_template("superadmin/tracking.html")
+    document = {
+        "id": "DOC-001",
+        "title": "Purchase Request - Laptops",
+        "timeline": [
+            {"status": "To-Review", "dept": "IT", "date": "2025-11-10 09:00", "remarks": "Newly submitted document"},
+            {"status": "Processing", "dept": "IT", "date": "2025-11-10 11:30", "remarks": "Started processing"},
+            {"status": "For Approval", "dept": "Finance", "date": "2025-11-11 10:30", "remarks": "Awaiting budget approval"},
+            {"status": "Completed", "dept": "IT", "date": "2025-11-12 15:45", "remarks": "Approved and finalized"}
+        ]
+    }
+
+    return render_template(
+        "superadmin/tracking.html",
+        document=document
+    )
 @bp.route("/superadmin/analytics")
 @login_required
 @role_required("admin")

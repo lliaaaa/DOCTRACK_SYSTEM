@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>Documents — Superadmin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% extends 'superadmin/index.html' %}
+{% block content %}
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
         /* Page-specific styling */
@@ -297,6 +293,4 @@ function saveDocument() {
 
 renderTable();
 </script>
-
-</body>
-</html>
+{% endblock %}
