@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SuperAdmin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #b71c1c;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding-top: 20px;
+            transition: 0.3s;
+            color: white;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            transition: 0.3s;
+        }
+
+        .sidebar.collapsed h2 {
+            opacity: 0;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .sidebar a:hover {
+            background: #8e0000;
+        }
+
+        .sidebar i {
+            font-size: 20px;
+        }
+
+        .sidebar span {
+            transition: 0.3s;
+        }
+
+        .sidebar.collapsed span {
+            opacity: 0;
+        }
+
+        /* Header */
+        .header {
+            height: 60px;
+            background: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            margin-left: 250px;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px #ccc;
+        }
+
+        .header.collapsed {
+            margin-left: 70px;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 20px;
+            margin-left: 250px;
+            transition: 0.3s;
+            min-height: calc(100vh - 60px);
+        }
+
+        .content.collapsed {
+            margin-left: 70px;
+        }
+
+        .toggle-btn {
+            cursor: pointer;
+            margin-right: 15px;
+        }
+    </style>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h2>SuperAdmin</h2>
+
+    <a href="{{ url_for('superadmin.admin_area') }}">
+        <i class="fa fa-gauge"></i><span>Dashboard</span>
+    </a>
+
+    <a href="{{ url_for('main.view_records') }}">
+        <i class="fa fa-file"></i><span>Documents</span>
+    </a>
+
+    <a href="{{ url_for('main.view_records') }}">
+        <i class="fa fa-location-dot"></i><span>Tracking</span>
+    </a>
+
+    <a href="{{ url_for('main.dashboard') }}">
+        <i class="fa fa-chart-pie"></i><span>Analytics</span>
+    </a>
+
+    <a href="{{ url_for('superadmin.add_record') }}">
+        <i class="fa fa-building"></i><span>Departments</span>
+    </a>
+
+    <a href="{{ url_for('superadmin.admin_area') }}">
+        <i class="fa fa-users"></i><span>Users</span>
+    </a>
+
+    <a href="{{ url_for('main.view_records') }}">
+        <i class="fa fa-clock"></i><span>Logs</span>
+    </a>
+
+    <a href="{{ url_for('auth.logout') }}">
+        <i class="fa fa-sign-out"></i><span>Logout</span>
+    </a>
+</div>
+
+<!-- HEADER -->
+<div class="header" id="header">
+    <i class="fa fa-bars toggle-btn" onclick="toggleSidebar()"></i>
+    <h3>Document Tracking System – SuperAdmin</h3>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="content">
+    <h1>Welcome to SuperAdmin Dashboard</h1>
+    <p>Select a menu item from the sidebar.</p>
+</div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("collapsed");
+    document.getElementById("header").classList.toggle("collapsed");
+    document.getElementById("content").classList.toggle("collapsed");
+}
+</script>
+
+</body>
+</html>

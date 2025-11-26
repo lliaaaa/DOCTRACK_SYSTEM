@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+
+        .content {
+            padding: 20px;
+            margin: 0; /* important for iframe */
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        /* Notification Cards */
+        .notif-card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 5px solid #b71c1c; /* red accent */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .notif-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .notif-card p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #444;
+        }
+
+        .notif-time {
+            font-size: 12px;
+            color: gray;
+            margin-top: 8px;
+        }
+
+        /* Empty State */
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <h1>Notifications</h1>
+
+        <!-- Example Notification Card -->
+        <div class="notif-card">
+            <h3>Document Approved</h3>
+            <p>Your document <strong>"Budget Request Form"</strong> has been approved by the admin.</p>
+            <div class="notif-time">2 hours ago</div>
+        </div>
+
+        <div class="notif-card">
+            <h3>Pending Review</h3>
+            <p>Your submitted document is currently under review. Please wait for further updates.</p>
+            <div class="notif-time">Yesterday</div>
+        </div>
+
+        <div class="notif-card">
+            <h3>New Message</h3>
+            <p>The admin left a note on your last submission. Check the document details page.</p>
+            <div class="notif-time">3 days ago</div>
+        </div>
+
+        <!-- Empty state (show only when no notifications) -->
+        <!--
+        <div class="empty">
+            No notifications yet.
+        </div>
+        -->
+    </div>
+</body>
+</html>

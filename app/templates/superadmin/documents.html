@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Documents — Superadmin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        /* Page-specific styling */
+        body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
+        .page-header {
+            display:flex; justify-content:space-between; align-items:center; gap:16px;
+            padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6;
+        }
+        .controls { display:flex; gap:10px; align-items:center; }
+        .controls input, .controls select { padding:8px 10px; border:1px solid #ddd; border-radius:6px; }
+        .btn { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; }
+        .btn.primary { background:#b71c1c; color:#fff; }
+        .btn.ghost { background:transparent; border:1px solid #ccc; }
+
+        .card { background:white; padding:16px; margin:16px 20px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+
+        table.documents { width:100%; border-collapse:collapse; }
+        table.documents th, table.documents td { padding:10px 12px; text-align:left; border-bottom:1px solid #f0f0f0; }
+        table.documents th { background:#fafafa; font-weight:600; }
+
+        .status-badge { padding:6px 10px; border-radius:999px; font-size:13px; color:white; display:inline-block; }
+.s-toreview { background:#ffc107; color:#212529; }   /* yellow */
+.s-processing { background:#17a2b8; }                /* teal */
+.s-forapproval { background:#0d6efd; }              /* blue */
+.s-completed { background:#198754; }                /* green */
+        .action-links a { margin-right:8px; color:#333; text-decoration:none; }
+        .small { font-size:13px; color:#666; }
+
+        /* Modal */
+        .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:50; }
+        .modal { background:white; width:520px; max-width:96%; border-radius:8px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,0.2); }
+        .modal h3 { margin-top:0; }
+        .form-row { margin-bottom:10px; }
+        .form-row label { display:block; font-size:13px; margin-bottom:6px; color:#333; }
+        .form-row input, .form-row select, .form-row textarea { width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:6px; }
+        .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+
+        @media (max-width:700px){
+            .page-header { flex-direction:column; align-items:flex-start; gap:12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div>
+        <h2 style="margin:0 0 6px 0">Documents</h2>
+        <div class="small">Manage and track all documents in the system</div>
+    </div>
+
+    <div class="controls">
+        <input id="searchInput" type="search" placeholder="Search by ID or title..." oninput="renderTable()" />
+        <select id="filterStatus" onchange="renderTable()">
+            <option value="">All statuses</option>
+            <option value="To-Review">To-Review</option>
+            <option value="Processing">Processing</option>
+            <option value="For Approval">For Approval</option>
+            <option value="Completed">Completed</option>
+        </select>
+        <select id="filterDept" onchange="renderTable()">
+            <option value="">All departments</option>
+            <option>Accounting</option>
+            <option>Registrar</option>
+            <option>HR</option>
+            <option>IT</option>
+        </select>
+
+        <button class="btn primary" onclick="openAddModal()"><i class="fa fa-plus"></i>&nbsp; Add Document</button>
+    </div>
+</div>
+
+<div class="card">
+    <table class="documents" id="docsTable">
+        <thead>
+            <tr>
+                <th style="width:90px">Doc ID</th>
+                <th>Title</th>
+                <th style="width:150px">Department</th>
+                <th style="width:160px">Date Added</th>
+                <th style="width:140px">Status</th>
+                <th style="width:160px">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="docsTbody">
+            <!-- rows injected by JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div id="docModal" style="display:none;" class="modal-backdrop">
+    <div class="modal">
+        <h3 id="modalTitle">Add Document</h3>
+
+        <div class="form-row">
+            <label for="docTitle">Title</label>
+            <input id="docTitle" type="text" />
+        </div>
+
+        <div class="form-row">
+            <label for="docType">Document Type</label>
+            <select id="docType">
+                <option>Report</option>
+                <option>Request</option>
+                <option>Contract</option>
+                <option>Letter</option>
+                <option>Other</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="docDept">Assign Department</label>
+            <select id="docDept">
+                <option>Accounting</option>
+                <option>Registrar</option>
+                <option>HR</option>
+                <option>IT</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="docNotes">Notes (optional)</label>
+            <textarea id="docNotes" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label for="docStatus">Status</label>
+            <select id="docStatus">
+                <option>To-Review</option>
+                <option>Processing</option>
+                <option>For Approval</option>
+                <option>Completed</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn primary" onclick="saveDocument()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let documents = [
+    { id: "DOC-001", title: "Purchase Request - Laptops", dept: "IT", date: "11/22/2025, 2:35 PM", status: "To-Review" },
+    { id: "DOC-002", title: "Budget Proposal 2026", dept: "Accounting", date: "11/20/2025, 10:15 AM", status: "Processing" },
+    { id: "DOC-003", title: "Student Transcript Request", dept: "Registrar", date: "11/19/2025, 9:30 AM", status: "Processing" },
+    { id: "DOC-004", title: "Employment Contract - Anna", dept: "HR", date: "11/15/2025, 3:20 PM", status: "Completed" },
+    { id: "DOC-005", title: "Policy Revision Draft", dept: "IT", date: "11/21/2025, 1:45 PM", status: "For Approval" },
+];
+
+let editingId = null;
+
+function statusClass(status) {
+    switch(status) {
+        case "To-Review": return "s-toreview";
+        case "Processing": return "s-processing";
+        case "For Approval": return "s-forapproval";
+        case "Completed": return "s-completed";
+        default: return "s-toreview";
+    }
+}
+
+function renderTable() {
+    const tbody = document.getElementById("docsTbody");
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
+    const statusFilter = document.getElementById("filterStatus").value;
+    const deptFilter = document.getElementById("filterDept").value;
+
+    tbody.innerHTML = "";
+
+    const rows = documents.filter(doc => {
+        if (q && !(doc.id + " " + doc.title).toLowerCase().includes(q)) return false;
+        if (statusFilter && doc.status !== statusFilter) return false;
+        if (deptFilter && doc.dept !== deptFilter) return false;
+        return true;
+    });
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No documents found.</td></tr>`;
+        return;
+    }
+
+    for (const doc of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${doc.id}</strong></td>
+            <td>
+                <div style="font-weight:600">${doc.title}</div>
+                <div class="small">${doc.type || ""}</div>
+            </td>
+            <td>${doc.dept}</td>
+            <td>${doc.date}</td>
+            <td>
+                <span class="status-badge ${statusClass(doc.status)}">${doc.status}</span>
+                <div style="margin-top:6px;">
+                    <select onchange="changeStatus('${doc.id}', this.value)">
+                        <option value="">Change status...</option>
+                        <option>To-Review</option>
+                        <option>Processing</option>
+                        <option>For Approval</option>
+                        <option>Completed</option>
+                    </select>
+                </div>
+            </td>
+            <td class="action-links">
+                <a href="#" onclick="viewDoc('${doc.id}')" title="View"><i class="fa fa-eye"></i></a>
+                <a href="#" onclick="openEditModal('${doc.id}')" title="Edit"><i class="fa fa-pen-to-square"></i></a>
+                <a href="#" onclick="deleteDoc('${doc.id}')" title="Delete" style="color:#c0392b"><i class="fa fa-trash"></i></a>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function changeStatus(id, newStatus) {
+    if (!newStatus) return;
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return;
+    doc.status = newStatus;
+    renderTable();
+}
+
+function viewDoc(id) {
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return alert("Document not found.");
+    alert(`Document ${doc.id}\nTitle: ${doc.title}\nDepartment: ${doc.dept}\nStatus: ${doc.status}\nAdded: ${doc.date}`);
+}
+
+function deleteDoc(id) {
+    if (!confirm("Delete this document? This action cannot be undone.")) return;
+    documents = documents.filter(d => d.id !== id);
+    renderTable();
+}
+
+function openAddModal() {
+    editingId = null;
+    document.getElementById("modalTitle").innerText = "Add Document";
+    document.getElementById("docTitle").value = "";
+    document.getElementById("docType").value = "Report";
+    document.getElementById("docDept").value = "Accounting";
+    document.getElementById("docNotes").value = "";
+    document.getElementById("docStatus").value = "To-Review";
+    document.getElementById("docModal").style.display = "flex";
+}
+
+function openEditModal(id) {
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return alert("Document not found.");
+    editingId = id;
+    document.getElementById("modalTitle").innerText = "Edit Document";
+    document.getElementById("docTitle").value = doc.title;
+    document.getElementById("docType").value = doc.type || "Report";
+    document.getElementById("docDept").value = doc.dept;
+    document.getElementById("docNotes").value = doc.notes || "";
+    document.getElementById("docStatus").value = doc.status;
+    document.getElementById("docModal").style.display = "flex";
+}
+
+function closeModal() { document.getElementById("docModal").style.display = "none"; }
+
+function saveDocument() {
+    const title = document.getElementById("docTitle").value.trim();
+    if (!title) return alert("Please enter a title.");
+
+    const now = new Date();
+    const timestamp = now.toLocaleString();
+
+    const obj = {
+        title,
+        type: document.getElementById("docType").value,
+        dept: document.getElementById("docDept").value,
+        date: timestamp,
+        status: document.getElementById("docStatus").value,
+        notes: document.getElementById("docNotes").value
+    };
+
+    if (editingId) {
+        const doc = documents.find(d => d.id === editingId);
+        if (!doc) return alert("Document not found.");
+        Object.assign(doc, obj);
+    } else {
+        const nextNum = (documents.length + 1 + Math.floor(Math.random()*90)).toString().padStart(3,'0');
+        obj.id = "DOC-" + nextNum;
+        documents.unshift(obj);
+    }
+
+    closeModal();
+    renderTable();
+}
+
+renderTable();
+</script>
+
+</body>
+</html>

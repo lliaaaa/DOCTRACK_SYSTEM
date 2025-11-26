@@ -1,0 +1,156 @@
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f8f9fc;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        color: #dea9a9;
+        font-size: 2.5rem;
+        margin-top: 40px;
+    }
+
+    p {
+        color: #555;
+        margin-bottom: 40px;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 30px;
+        padding: 20px;
+    }
+
+    .card {
+        width: 500px;
+        height: 600px;
+        border-radius: 20px;
+        overflow: hidden;
+        background-color: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        padding: 40px 0;
+        color: white;
+    }
+
+    .admin-header {
+        background: linear-gradient(135deg, #c82333, #e74c3c);
+    }
+
+    .instructor-header {
+        background: linear-gradient(135deg, #8e2de2, #ff6fd8);
+    }
+
+    .card h2 {
+        margin: 10px 0 0;
+    }
+
+    .card small {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .card-content {
+        padding: 20px;
+        text-align: left;
+        color: #666;
+        font-size: 18px;
+        line-height: 1.8;
+    }
+
+    .card-content ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .card-content li::before {
+        content: "• ";
+        color: #888;
+    }
+
+    .btn {
+        display: block;
+        width: 100%;
+        margin: 25px auto;
+        padding: 12px 0;
+        border: none;
+        border-radius: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+
+    .btn-admin {
+        background-color: #c82333;
+        color: white;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .btn-client {
+        background: linear-gradient(135deg, #8e2de2, #ff6fd8);
+        color: white;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: scale(1.03);
+    }
+</style>
+</head>
+<body>
+
+<h1>Access Portal</h1>
+<p>Select your role to access the system</p>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header admin-header">
+            <div>
+                <img style="height: 80px;width: 80px" src="../images/settings.png">
+            </div>
+            <h2>Administrator</h2>
+        </div>
+        <div class="card-content">
+            <ul>
+                <li>User Management</li>
+                <li>Analytics & Reports</li>
+                <li>System Security</li>
+            </ul>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header instructor-header">
+            <div>
+                <img style="height: 80px;width: 80px" src="../images/customers.png">
+            </div>
+            <h2>Client</h2>
+        </div>
+        <div class="card-content">
+            <ul>
+                <li>Student Monitoring</li>
+                <li>Task Management</li>
+                <li>Communication Hub</li>
+            </ul>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-client">ACCESS CLIENT PANEL</a>
+        </div>
+    </div>
+</div>

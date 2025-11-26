@@ -37,10 +37,18 @@ def login():
         password = request.form["password"]
 
         user = User.query.filter_by(email=email).first()
+
+        # Check login
         if user and user.check_password(password):
             session["user_id"] = user.id
             session["role"] = user.role
-            return redirect(url_for("main.dashboard"))
+
+            # Redirect based on role
+            if user.role == "admin":
+                return redirect(url_for("main.superadmin_home"))
+
+            else:
+                return redirect(url_for("main.co_offices_home"))
 
         flash("Invalid email or password", "danger")
 

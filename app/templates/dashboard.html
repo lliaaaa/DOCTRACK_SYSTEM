@@ -1,13 +1,55 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="fw-bold">Welcome</h1>
 
-    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
-        Logout
-    </a>
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">👤 Client Dashboard</h2>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Your Total Documents</h6>
+                <h2 class="fw-bold text-primary">{{ stats.total }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Pending</h6>
+                <h2 class="fw-bold text-warning">{{ stats.pending }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm p-3 text-center">
+                <h6>Completed</h6>
+                <h2 class="fw-bold text-success">{{ stats.completed }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mt-4">📄 Your Recent Documents</h5>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Control</th>
+                <th>Type</th>
+                <th>Date In</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in recent %}
+            <tr>
+                <td>{{ r.control }}</td>
+                <td>{{ r.type }}</td>
+                <td>{{ r.date_in }}</td>
+                <td>{{ r.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </div>
 
-<p class="lead">You are now logged in.</p>
 {% endblock %}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Users — Superadmin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
+.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
+.table-container { padding:20px; }
+table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
+th { background:#f7f7f7; }
+button { padding:6px 12px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
+.edit-btn { background:#0d6efd; color:white; }
+.delete-btn { background:#dc3545; color:white; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <h2 style="margin:0;">Users Management</h2>
+    <div class="small">View and manage all system users</div>
+</div>
+
+<div class="table-container">
+    <button onclick="addUser()">Add User</button>
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Sample user data
+let users = [
+    {id:"USER-001", name:"Alice", role:"Superadmin", dept:"Finance"},
+    {id:"USER-002", name:"Bob", role:"Admin", dept:"HR"},
+    {id:"USER-003", name:"Charlie", role:"Admin", dept:"IT"}
+];
+
+function renderUsers() {
+    const tbody = document.getElementById("userTable").querySelector("tbody");
+    tbody.innerHTML = "";
+    users.forEach(user => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.role}</td>
+                        <td>${user.dept}</td>
+                        <td>
+                            <button class="edit-btn" onclick="editUser('${user.id}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteUser('${user.id}')">Delete</button>
+                        </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function addUser(){
+    const name = prompt("Enter User Name:");
+    const role = prompt("Enter Role (Superadmin/Admin/Client):");
+    const dept = prompt("Enter Department:");
+    if(name && role && dept){
+        const id = "USER-" + String(users.length + 1).padStart(3,'0');
+        users.push({id,name,role,dept});
+        renderUsers();
+    }
+}
+
+function editUser(id){
+    const user = users.find(u => u.id === id);
+    const name = prompt("Edit User Name:", user.name);
+    const role = prompt("Edit Role:", user.role);
+    const dept = prompt("Edit Department:", user.dept);
+    if(name && role && dept){
+        user.name = name;
+        user.role = role;
+        user.dept = dept;
+        renderUsers();
+    }
+}
+
+function deleteUser(id){
+    if(confirm("Are you sure you want to delete this user?")){
+        users = users.filter(u => u.id !== id);
+        renderUsers();
+    }
+}
+
+// Initial render
+renderUsers();
+</script>
+
+</body>
+</html>

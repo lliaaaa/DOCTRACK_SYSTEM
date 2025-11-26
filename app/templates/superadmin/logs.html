@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Logs — Superadmin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
+.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
+.table-container { padding:20px; }
+table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
+th { background:#f7f7f7; }
+.status { padding:4px 8px; border-radius:6px; color:white; font-weight:bold; display:inline-block; }
+.info { background:#17a2b8; }
+.success { background:#198754; }
+.warning { background:#ffc107; color:black; }
+.danger { background:#dc3545; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <h2 style="margin:0;">System Logs</h2>
+    <div class="small">Track user and document activities with roles</div>
+</div>
+
+<div class="table-container">
+    <table id="logsTable">
+        <thead>
+            <tr>
+                <th>Log ID</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Sample log data with roles
+const logs = [
+    {id:"LOG-001", user:"Alice", role:"Superadmin", action:"Added Document", target:"DOC-001", status:"Success", timestamp:"2025-11-22 09:15"},
+    {id:"LOG-002", user:"Alice", role:"Superadmin", action:"Edited Document", target:"DOC-002", status:"Success", timestamp:"2025-11-22 10:20"},
+    {id:"LOG-003", user:"Alice", role:"Superadmin", action:"Deleted Document", target:"DOC-003", status:"Success", timestamp:"2025-11-22 11:05"},
+    {id:"LOG-004", user:"Alice", role:"Superadmin", action:"Approved Document", target:"DOC-004", status:"Success", timestamp:"2025-11-22 12:30"},
+    {id:"LOG-005", user:"Bob", role:"User", action:"Attempted Access", target:"Admin Panel", status:"Danger", timestamp:"2025-11-22 13:10"}
+];
+
+function renderLogs(){
+    const tbody = document.getElementById("logsTable").querySelector("tbody");
+    tbody.innerHTML = "";
+    logs.forEach(log=>{
+        let statusClass = "info";
+        switch(log.status){
+            case "Success": statusClass = "success"; break;
+            case "Warning": statusClass = "warning"; break;
+            case "Danger": statusClass = "danger"; break;
+        }
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${log.id}</td>
+                        <td>${log.user}</td>
+                        <td>${log.role}</td>
+                        <td>${log.action}</td>
+                        <td>${log.target}</td>
+                        <td><span class="status ${statusClass}">${log.status}</span></td>
+                        <td>${log.timestamp}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+// Initial render
+renderLogs();
+</script>
+
+</body>
+</html>
