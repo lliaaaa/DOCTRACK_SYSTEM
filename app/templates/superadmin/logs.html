@@ -1,78 +1,302 @@
 {% extends 'superadmin/index.html' %}
 {% block content %}
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
-.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
-.table-container { padding:20px; }
-table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
-th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
-th { background:#f7f7f7; }
-.status { padding:4px 8px; border-radius:6px; color:white; font-weight:bold; display:inline-block; }
-.info { background:#17a2b8; }
-.success { background:#198754; }
-.warning { background:#ffc107; color:black; }
-.danger { background:#dc3545; }
+/* --- PAGE HEADER --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 10px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+}
+
+.page-title h2 {
+    margin: 0 0 5px 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.page-title .small {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.btn.primary {
+    background-color: #2c3e50;
+    color: #ffffff;
+}
+
+.btn.primary:hover {
+    background-color: #1a252f;
+}
+
+/* --- CONTROLS ROW --- */
+.controls-row {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    border-radius: 6px;
+}
+
+.controls-row input,
+.controls-row select {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.controls-row input:focus,
+.controls-row select:focus {
+    outline: none;
+    border-color: #2c3e50;
+    box-shadow: 0 0 5px rgba(44, 62, 80, 0.2);
+}
+
+.controls-row input[type="search"] {
+    flex-grow: 1;
+    max-width: 300px;
+}
+
+.controls-row select {
+    max-width: 200px;
+}
+
+/* --- TABLE STYLES --- */
+.table-container {
+    overflow-x: auto;
+    padding: 0 20px 20px 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    min-width: 800px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 14px;
+    color: #34495e;
+}
+
+th {
+    background-color: #ecf0f1;
+    font-weight: 600;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Column Widths */
+th:nth-child(1) { width: 12%; } /* Timestamp */
+th:nth-child(2) { width: 15%; } /* User */
+th:nth-child(3) { width: 15%; } /* Action */
+th:nth-child(4) { width: 15%; } /* Document */
+th:nth-child(5) { width: auto; } /* Details */
+
+/* --- ACTION BADGES --- */
+.action-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Badge Colors */
+.a-added {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #0f5132;
+}
+
+.a-updated {
+    background-color: #cff4fc;
+    color: #055160;
+    border: 1px solid #055160;
+}
+
+.a-user-login,
+.a-downloaded {
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #084298;
+}
+
+.a-deleted {
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #842029;
+}
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 768px) {
+    .controls-row {
+        flex-wrap: wrap;
+    }
+
+    .controls-row input,
+    .controls-row select {
+        max-width: 100%;
+        flex-grow: 1;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    th, td {
+        font-size: 13px;
+        padding: 10px;
+    }
+}
 </style>
-</head>
-<body>
 
 <div class="page-header">
-    <h2 style="margin:0;">System Logs</h2>
-    <div class="small">Track user and document activities with roles</div>
+    <div class="page-title">
+        <h2>Activity Logs</h2>
+        <div class="small">View system activity and audit trail</div>
+    </div>
+    <div>
+        <button class="btn primary"><i class="fa fa-download"></i>&nbsp; Download Logs</button>
+    </div>
+</div>
+
+<div class="controls-row">
+    <input id="searchInput" type="search" placeholder="Search logs..." oninput="renderLogs()" />
+    <select id="filterAction" onchange="renderLogs()">
+        <option value="">All Actions</option>
+        <option>Added Document</option>
+        <option>Updated Status</option>
+        <option>User Login</option>
+        <option>Downloaded Document</option>
+        <option>Edited Document</option>
+        <option>Deleted Document</option>
+        <option>Added User</option>
+        <option>Updated Department</option>
+    </select>
+    <input id="filterDate" type="date" placeholder="mm/dd/yyyy" onchange="renderLogs()" />
 </div>
 
 <div class="table-container">
     <table id="logsTable">
         <thead>
             <tr>
-                <th>Log ID</th>
-                <th>User</th>
-                <th>Role</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Status</th>
                 <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Document</th>
+                <th>Details</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Populated by JS -->
         </tbody>
     </table>
 </div>
 
 <script>
-// Sample log data with roles
 const logs = [
-    {id:"LOG-001", user:"Alice", role:"Superadmin", action:"Added Document", target:"DOC-001", status:"Success", timestamp:"2025-11-22 09:15"},
-    {id:"LOG-002", user:"Alice", role:"Superadmin", action:"Edited Document", target:"DOC-002", status:"Success", timestamp:"2025-11-22 10:20"},
-    {id:"LOG-003", user:"Alice", role:"Superadmin", action:"Deleted Document", target:"DOC-003", status:"Success", timestamp:"2025-11-22 11:05"},
-    {id:"LOG-004", user:"Alice", role:"Superadmin", action:"Approved Document", target:"DOC-004", status:"Success", timestamp:"2025-11-22 12:30"},
-    {id:"LOG-005", user:"Bob", role:"User", action:"Attempted Access", target:"Admin Panel", status:"Danger", timestamp:"2025-11-22 13:10"}
+    { timestamp: "2025-11-28 10:30:00", user: "John Doe", action: "Added Document", document: "DOC-2025-001", details: "Added new document: Budget Request for Q1 2025" },
+    { timestamp: "2025-11-28 08:15:00", user: "Jane Smith", action: "Updated Status", document: "DOC-2025-002", details: "Changed status from \"For Processing\" to \"For Signature Mayor\"" },
+    { timestamp: "2025-11-28 08:00:00", user: "Admin User", action: "User Login", document: "N/A", details: "User logged into Admin Portal" },
+    { timestamp: "2025-11-27 16:45:00", user: "Mark Johnson", action: "Downloaded Document", document: "DOC-2025-003", details: "Downloaded document: Diesel Reimbursement - Agriculture" },
+    { timestamp: "2025-11-27 14:20:00", user: "Sarah Williams", action: "Edited Document", document: "DOC-2025-004", details: "Updated document information" },
+    { timestamp: "2025-11-27 11:00:00", user: "Robert Brown", action: "Added User", document: "N/A", details: "Added new user: Emily Davis" },
+    { timestamp: "2025-11-26 15:30:00", user: "Admin User", action: "Deleted Document", document: "DOC-2025-OLD", details: "Deleted obsolete document" },
+    { timestamp: "2025-11-26 13:15:00", user: "Jane Smith", action: "Updated Department", document: "N/A", details: "Updated Engineering Office information" },
+    { timestamp: "2025-11-26 10:00:00", user: "John Doe", action: "Added Document", document: "DOC-2025-005", details: "Added new document: Campaign Tarpaulin Reimbursement" },
 ];
 
+function actionClass(action) {
+    switch(action) {
+        case "Added Document":
+        case "Added User":
+            return "a-added";
+        case "Updated Status":
+        case "Edited Document":
+        case "Updated Department":
+            return "a-updated";
+        case "User Login":
+        case "Downloaded Document":
+            return "a-user-login";
+        case "Deleted Document":
+            return "a-deleted";
+        default: return "a-updated";
+    }
+}
+
 function renderLogs(){
-    const tbody = document.getElementById("logsTable").querySelector("tbody");
-    tbody.innerHTML = "";
-    logs.forEach(log=>{
-        let statusClass = "info";
-        switch(log.status){
-            case "Success": statusClass = "success"; break;
-            case "Warning": statusClass = "warning"; break;
-            case "Danger": statusClass = "danger"; break;
-        }
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${log.id}</td>
-                        <td>${log.user}</td>
-                        <td>${log.role}</td>
-                        <td>${log.action}</td>
-                        <td>${log.target}</td>
-                        <td><span class="status ${statusClass}">${log.status}</span></td>
-                        <td>${log.timestamp}</td>`;
-        tbody.appendChild(tr);
-    });
+    const tbody = document.getElementById("logsTable").querySelector("tbody");
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
+    const actionFilter = document.getElementById("filterAction").value;
+    const dateFilter = document.getElementById("filterDate").value;
+
+    tbody.innerHTML = "";
+
+    const rows = logs.filter(log => {
+        // Search filter (user, document, details)
+        if (q && !(log.user + " " + log.document + " " + log.details).toLowerCase().includes(q)) return false;
+        
+        // Action filter
+        if (actionFilter && log.action !== actionFilter) return false;
+        
+        // Date filter
+        if (dateFilter && !log.timestamp.startsWith(dateFilter)) return false;
+
+        return true;
+    });
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#666;">No logs found.</td></tr>`;
+        return;
+    }
+    
+    rows.forEach(log=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${log.timestamp.split(' ')[0]} <div style="font-size:12px; color:#999; margin-top:2px;">${log.timestamp.split(' ')[1]}</div></td>
+                        <td>${log.user}</td>
+                        <td><span class="action-badge ${actionClass(log.action)}">${log.action}</span></td>
+                        <td>${log.document}</td>
+                        <td>${log.details}</td>`;
+        tbody.appendChild(tr);
+    });
 }
 
 // Initial render
+renderLogs();
 renderLogs();
 </script>
 {% endblock %}

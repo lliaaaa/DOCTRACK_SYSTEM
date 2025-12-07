@@ -1,154 +1,318 @@
 {% extends 'superadmin/index.html' %}
 {% block content %}
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
-.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
-.cards { display:flex; flex-wrap:wrap; gap:16px; padding:20px; }
-.card { background:white; padding:20px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.05); flex:1; min-width:220px; }
-.card h3 { margin:0 0 10px 0; font-size:18px; }
-.table-container { padding:20px; }
-table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:30px; }
-th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
-th { background:#f7f7f7; }
-.status { padding:4px 8px; border-radius:6px; font-weight:bold; display:inline-block; color:white; }
-.to-review { background:#ffc107; color:#212529; }   /* yellow */
-.processing { background:#17a2b8; }                /* teal */
-.for-approval { background:#0d6efd; }              /* blue */
-.completed { background:#198754; }                /* green */
-.delayed { border: 1; font-weight: bold; }
+/* --- PAGE HEADER --- */
+.page-header {
+    padding: 20px 20px 10px 20px;
+}
+
+.page-title h2 {
+    margin: 0 0 5px 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.page-title .small {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+/* --- SUMMARY CARDS --- */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    border-left: 5px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-info .label {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+}
+
+.card-info .value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.card-icon {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+/* Card colors */
+.total-card { border-left-color: #0d6efd; }
+.pending-card { border-left-color: #ffc107; }
+.completed-card { border-left-color: #198754; }
+.rate-card { border-left-color: #6f42c1; }
+
+.total-card .value, .total-card .card-icon { color: #0d6efd; }
+.pending-card .value, .pending-card .card-icon { color: #ffc107; }
+.completed-card .value, .completed-card .card-icon { color: #198754; }
+.rate-card .value, .rate-card .card-icon { color: #6f42c1; }
+
+/* --- CHART GRID --- */
+.chart-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 0 20px 20px 20px;
+}
+
+.chart-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    min-height: 350px;
+}
+
+.chart-box h3 {
+    font-size: 18px;
+    color: #34495e;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Bottom row chart layout */
+.chart-grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 0 20px 20px 20px;
+}
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 992px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-grid-bottom {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
-</head>
-<body>
+
+</style>
 
 <div class="page-header">
-    <h2 style="margin:0;"> Bottleneck Analytics</h2>
-    <div class="small">Identify where documents are stuck in departments</div>
+    <div class="page-title">
+        <h2>Analytics</h2>
+        <div class="small">Document tracking analytics and insights</div>
+    </div>
 </div>
 
-<!-- Summary Cards -->
-<div class="cards">
-    <div class="card">
-        <h3>Total Documents</h3>
-        <p id="totalDocs" style="font-size:24px; font-weight:bold;"></p>
-    </div>
-    <div class="card">
-        <h3>Delayed Documents</h3>
-        <p id="delayedDocs" style="font-size:24px; font-weight:bold; color:red;"></p>
-    </div>
+<div class="summary-cards">
+    <div class="card total-card">
+        <div class="card-info">
+            <div class="label">Total Documents</div>
+            <div class="value" id="totalDocuments">15</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-file-alt"></i></div>
+    </div>
+
+    <div class="card pending-card">
+        <div class="card-info">
+            <div class="label">Pending</div>
+            <div class="value" id="pendingDocuments">2</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-clock"></i></div>
+    </div>
+
+    <div class="card completed-card">
+        <div class="card-info">
+            <div class="label">Completed</div>
+            <div class="value" id="completedDocuments">3</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-check-circle"></i></div>
+    </div>
+
+    <div class="card rate-card">
+        <div class="card-info">
+            <div class="label">Completion Rate</div>
+            <div class="value" id="completionRate">20.0%</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-chart-line"></i></div>
+    </div>
 </div>
 
-<!-- Department Bottleneck Table -->
-<div class="table-container">
-    <h3>Department Bottlenecks</h3>
-    <table id="deptTable">
-        <thead>
-            <tr>
-                <th>Department</th>
-                <th>Documents in Progress</th>
-                <th>Avg. Time in Status (hrs)</th>
-                <th>Delayed Documents</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Populated by JS -->
-        </tbody>
-    </table>
+<div class="chart-grid">
+        <div class="chart-box">
+        <h3>Documents by Status</h3>
+                <canvas id="statusBarChart"></canvas>
+    </div>
+
+        <div class="chart-box">
+        <h3>Documents by Type</h3>
+                <canvas id="typePieChart"></canvas>
+    </div>
 </div>
 
-<!-- Top Delayed Documents Table -->
-<div class="table-container">
-    <h3>Top Delayed Statuses</h3>
-    <table id="delayedTable">
-        <thead>
-            <tr>
-                <th>Document ID</th>
-                <th>Title</th>
-                <th>Current Status</th>
-                <th>Department</th>
-                <th>Time in Status (hrs)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Populated by JS -->
-        </tbody>
-    </table>
+<div class="chart-grid-bottom">
+        <div class="chart-box">
+        <h3>Top Departments by Document Count</h3>
+                <canvas id="departmentBarChart"></canvas>
+    </div>
+
+        <div class="chart-box">
+        <h3>Document Trend (Last 6 Months)</h3>
+                <canvas id="trendLineChart"></canvas>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 <script>
-// Sample document data
-const documents = [
-    {id:"DOC-001", title:"Purchase Request", timeline:[
-        {status:"To-Review", dept:"HR", start:"2025-11-10T08:00:00", end:"2025-11-10T09:00:00"},
-        {status:"Processing", dept:"IT", start:"2025-11-10T09:05:00", end:"2025-11-11T11:00:00"},
-        {status:"For Approval", dept:"Finance", start:"2025-11-11T11:05:00", end:"2025-11-12T15:00:00"},
-        {status:"Completed", dept:"IT", start:"2025-11-12T15:10:00", end:"2025-11-12T15:30:00"}
-    ]},
-    {id:"DOC-002", title:"Budget Proposal", timeline:[
-        {status:"To-Review", dept:"Accounting", start:"2025-11-08T08:20:00", end:"2025-11-08T09:00:00"},
-        {status:"Processing", dept:"Accounting", start:"2025-11-08T09:05:00", end:"2025-11-10T12:00:00"},
-        {status:"For Approval", dept:"Superadmin", start:"2025-11-10T12:05:00", end:"2025-11-12T14:00:00"}
-    ]}
-];
+// --- Sample Data for Charts (Based on the image) ---
+const chartData = {
+    // Documents by Status (Bar Chart)
+    statusLabels: ["For Signature Mayor", "Request for PR", "Request for PO", "Request for CBR", "Signatures of BAC...", "Accounting Staff...", "For Processing", "With Checked"],
+    statusCounts: [2, 2, 1, 1, 2, 2, 2, 3],
+    
+    // Documents by Type (Pie Chart)
+    typeLabels: ["SVP", "BIDDING", "DIESEL", "TARPAULIN", "MEDICAL", "BURIAL", "T.E.R"],
+    typeCounts: [7, 2, 1, 1, 1, 1, 2],
+    
+    // Top Departments (Horizontal Bar Chart)
+    deptLabels: ["Mayor", "Engineering", "Budget", "Agriculture", "Municipal Health"],
+    deptCounts: [1.0, 1.0, 1.5, 1.5, 2.0], // Values approximated from the visual scale
 
-// Helper to compute hours
-function diffHours(start, end){ return (new Date(end)-new Date(start))/1000/3600; }
+    // Document Trend (Line Chart)
+    trendLabels: ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov"],
+    trendData: [40, 50, 48, 55, 60, 15] // Mocked trend data
+};
 
-// Summary
-const totalDocs = documents.length;
-let delayedDocsCount = 0;
+const colors = {
+    primary: '#dc3545', 
+    secondary: '#0d6efd',
+    success: '#198754',
+    warning: '#ffc107',
+    info: '#17a2b8',
+    purple: '#6f42c1',
+    lightGray: '#e9ecef',
+};
 
-// Department stats
-const deptStats = {};
+// --- Chart Rendering Functions ---
 
-const delayedRows = [];
+function createStatusBarChart() {
+    const ctx = document.getElementById('statusBarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.statusLabels,
+            datasets: [{
+                data: chartData.statusCounts,
+                backgroundColor: colors.secondary, // Blue color for all bars
+                borderColor: colors.secondary,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true },
+                x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 90 } } // Rotate x-labels for space
+            }
+        }
+    });
+}
 
-documents.forEach(doc=>{
-    const lastStep = doc.timeline[doc.timeline.length-1];
-    doc.timeline.forEach(step=>{
-        const hrs = diffHours(step.start, step.end);
+function createTypePieChart() {
+    const ctx = document.getElementById('typePieChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.typeLabels.map((label, i) => `${label}: ${chartData.typeCounts[i]}`),
+            datasets: [{
+                data: chartData.typeCounts,
+                backgroundColor: [colors.secondary, colors.info, colors.warning, colors.primary, colors.purple, colors.success, colors.lightGray]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' }
+            }
+        }
+    });
+}
 
-        // Dept stats
-        if(!deptStats[step.dept]) deptStats[step.dept]={count:0,totalHrs:0,delayed:0};
-        deptStats[step.dept].count++;
-        deptStats[step.dept].totalHrs += hrs;
+function createDepartmentBarChart() {
+    const ctx = document.getElementById('departmentBarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.deptLabels.reverse(), // Reverse labels and data to match image (Municipal Health on top)
+            datasets: [{
+                data: chartData.deptCounts.reverse(),
+                backgroundColor: colors.success, // Green color
+                borderColor: colors.success,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Makes it a horizontal bar chart
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, max: 2.5 }, // Set max to 2.5 to match visual scale
+                y: { grid: { display: false } }
+            }
+        }
+    });
+}
 
-        // Delayed docs (>24hrs in a status)
-        if(hrs>24){
-            deptStats[step.dept].delayed++;
-            delayedDocsCount++;
-            delayedRows.push({id:doc.id,title:doc.title,status:step.status,dept:step.dept,time:hrs.toFixed(2)});
-        }
-    });
-});
+function createTrendLineChart() {
+    const ctx = document.getElementById('trendLineChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.trendLabels,
+            datasets: [{
+                label: 'documents',
+                data: chartData.trendData,
+                fill: false,
+                borderColor: colors.purple, // Purple color
+                tension: 0.3 // Smooth line
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, max: 80 }, // Set max to 80 to match visual scale
+            }
+        }
+    });
+}
 
-// Update summary cards
-document.getElementById("totalDocs").textContent = totalDocs;
-document.getElementById("delayedDocs").textContent = delayedDocsCount;
-
-// Populate department table
-const deptTbody = document.getElementById("deptTable").querySelector("tbody");
-Object.keys(deptStats).forEach(dept=>{
-    const d = deptStats[dept];
-    const avgTime = (d.totalHrs/d.count).toFixed(2);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${dept}</td>
-                    <td>${d.count}</td>
-                    <td>${avgTime}</td>
-                    <td>${d.delayed}</td>`;
-    deptTbody.appendChild(tr);
-});
-
-// Populate delayed documents table
-const delayedTbody = document.getElementById("delayedTable").querySelector("tbody");
-delayedRows.forEach(row=>{
-    const tr = document.createElement("tr");
-    const statusClass = row.status.toLowerCase().replace(/\s/g,'-');
-    tr.innerHTML = `<td>${row.id}</td>
-                    <td>${row.title}</td>
-                    <td class="status ${statusClass} delayed">${row.status}</td>
-                    <td>${row.dept}</td>
-                    <td>${row.time}</td>`;
-    delayedTbody.appendChild(tr);
+// Initialize all charts when the content is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Ensure Chart.js script is loaded before calling these functions
+    createStatusBarChart();
+    createTypePieChart();
+    createDepartmentBarChart();
+    createTrendLineChart();
 });
 </script>
 {% endblock %}

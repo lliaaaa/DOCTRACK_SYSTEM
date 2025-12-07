@@ -1,49 +1,126 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
+<style>
+    body {
+        background: linear-gradient(to bottom right, #e11d22, #dc2626);
+        min-height: 100vh;
+    }
 
-                <h3 class="text-center mb-4">Login</h3>
+    .login-card {
+        border-radius: 14px;
+        padding: 40px 35px;
+    }
 
-                <form method="POST">
+    .login-icon {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        background: #fde8e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px auto;
+        font-size: 28px;
+        color: #dc2626;
+    }
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input 
-                            type="email" 
-                            class="form-control" 
-                            id="email" 
-                            name="email" 
-                            placeholder="Enter your email" 
-                            required>
-                    </div>
+    .login-title {
+        font-size: 20px;
+        font-weight: 600;
+        text-align: center;
+    }
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input 
-                            type="password" 
-                            class="form-control" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Enter your password" 
-                            required>
-                    </div>
+    .login-subtitle {
+        text-align: center;
+        margin-top: 6px;
+        margin-bottom: 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-                    <button type="submit" class="btn btn-primary w-100 mb-3">
-                        Login
-                    </button>
+    .form-label {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
 
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary w-100">
-                        Create an Account
-                    </a>
+    .form-control {
+        height: 45px;
+        border-radius: 8px;
+    }
 
-                </form>
+    .login-btn {
+        background-color: #dc2626;
+        border: none;
+        height: 46px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-top: 10px;
+    }
 
+    .login-btn:hover {
+        background-color: #b91c1c;
+    }
+
+    .back-link {
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: inline-block;
+        color: #374151;
+    }
+
+</style>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="col-md-4">
+
+        <div class="card shadow-sm login-card">
+            <a href="#" class="back-link">← Back to Portal Selection</a>
+
+            <div class="login-icon">
+                🔒
             </div>
+
+            <h3 class="login-title">Admin Portal Login</h3>
+            <p class="login-subtitle">Enter your credentials to continue</p>
+
+            <form method="POST">
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        class="form-control" 
+                        id="email" 
+                        name="email" 
+                        placeholder="admin@portal.com"
+                        required>
+                </div>
+
+                <div class="mb-2">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        class="form-control" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required>
+                </div>
+
+                <div class="text-end mb-3">
+                    <a href="#" style="font-size: 13px;color: #dc2626;">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn login-btn w-100" style="color: #ffffff;">
+                    Login to Admin Portal
+                </button>
+
+            </form>
+
         </div>
     </div>
 </div>
+
 {% endblock %}

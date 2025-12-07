@@ -1,99 +1,248 @@
 {% extends 'superadmin/index.html' %}
 {% block content %}
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
-.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
-.table-container { padding:20px; }
-table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
-th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
-th { background:#f7f7f7; }
-button { padding:6px 12px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
-.edit-btn { background:#0d6efd; color:white; }
-.delete-btn { background:#dc3545; color:white; }
+/* --- PAGE HEADER --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.page-title h2 {
+    margin: 0 0 5px 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.page-title .small {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.btn.primary {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+.btn.primary:hover {
+    background-color: #c82333;
+}
+
+/* --- CONTROLS ROW --- */
+.controls-row {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px 20px 20px;
+    flex-wrap: wrap;
+}
+
+.controls-row input {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 250px;
+    transition: 0.2s;
+}
+
+.controls-row input:focus {
+    outline: none;
+    border-color: #dc3545;
+    box-shadow: 0 0 5px rgba(220, 53, 69, 0.2);
+}
+
+/* --- TABLE STYLES --- */
+.table-container {
+    overflow-x: auto;
+    padding: 0 20px 20px 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    min-width: 800px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 14px;
+    color: #343a40;
+    border-bottom: 1px solid #e9ecef;
+}
+
+th {
+    background-color: #f1f3f5;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+
+/* Alternate row colors */
+tr:nth-child(even) { background-color: #ffffff; }
+tr:nth-child(odd)  { background-color: #f8f9fa; }
+
+th:nth-child(5),
+td:nth-child(5),
+th:nth-child(6),
+td:nth-child(6) {
+    text-align: center;
+}
+
+/* --- STATUS BADGES --- */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.s-active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.s-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* --- ACTION ICONS --- */
+.action-links {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.action-links a {
+    font-size: 16px;
+    color: #6c757d;
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.action-links a:hover {
+    color: #343a40;
+}
+
+.action-links .delete-icon {
+    color: #dc3545;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .controls-row input {
+        max-width: 100%;
+    }
+
+    table {
+        min-width: 100%;
+    }
+}
 </style>
-</head>
-<body>
 
 <div class="page-header">
-    <h2 style="margin:0;">Users Management</h2>
-    <div class="small">View and manage all system users</div>
+    <div class="page-title">
+        <h2>Users Management</h2>
+        <div class="small">Manage system users and permissions</div>
+    </div>
+    <div>
+        <button class="btn primary"><i class="fa fa-plus"></i>&nbsp; Add User</button>
+    </div>
+</div>
+
+<div class="controls-row">
+    <input id="searchInput" type="search" placeholder="Search users..." oninput="renderTable()" />
 </div>
 
 <div class="table-container">
-    <button onclick="addUser()">Add User</button>
-    <table id="userTable">
+    <table id="usersTable">
         <thead>
             <tr>
-                <th>User ID</th>
                 <th>Name</th>
+                <th>Email</th>
                 <th>Role</th>
                 <th>Department</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Populated by JS -->
-        </tbody>
+        <tbody id="usersTbody"></tbody>
     </table>
 </div>
 
 <script>
-// Sample user data
-let users = [
-    {id:"USER-001", name:"Alice", role:"Superadmin", dept:"Finance"},
-    {id:"USER-002", name:"Bob", role:"Admin", dept:"HR"},
-    {id:"USER-003", name:"Charlie", role:"Admin", dept:"IT"}
+const users = [
+    { id: 1, name: "John Doe", email: "john.doe@gov.ph", role: "Administrator", department: "Mayor Office", status: "Active" },
+    { id: 2, name: "Jane Smith", email: "jane.smith@gov.ph", role: "Document Controller", department: "Budget Office", status: "Active" },
+    { id: 3, name: "Mark Johnson", email: "mark.johnson@gov.ph", role: "Staff", department: "Engineering Office", status: "Active" },
+    { id: 4, name: "Sarah Williams", email: "sarah.williams@gov.ph", role: "Department Head", department: "Accounting Office", status: "Active" },
+    { id: 5, name: "Robert Brown", email: "robert.brown@gov.ph", role: "Staff", department: "Agriculture Office", status: "Inactive" },
 ];
 
-function renderUsers() {
-    const tbody = document.getElementById("userTable").querySelector("tbody");
+function statusClass(status) {
+    return status.toLowerCase() === 'active' ? 's-active' : 's-inactive';
+}
+
+function renderTable() {
+    const tbody = document.getElementById("usersTbody");
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
     tbody.innerHTML = "";
-    users.forEach(user => {
+
+    const rows = users.filter(user => {
+        const searchable = (user.name + user.email + user.role + user.department).toLowerCase();
+        return !q || searchable.includes(q);
+    });
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#6c757d;">No users found.</td></tr>`;
+        return;
+    }
+
+    rows.forEach(user => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${user.id}</td>
-                        <td>${user.name}</td>
-                        <td>${user.role}</td>
-                        <td>${user.dept}</td>
-                        <td>
-                            <button class="edit-btn" onclick="editUser('${user.id}')">Edit</button>
-                            <button class="delete-btn" onclick="deleteUser('${user.id}')">Delete</button>
-                        </td>`;
+        tr.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td>${user.department}</td>
+            <td><span class="status-badge ${statusClass(user.status)}">${user.status}</span></td>
+            <td class="action-links">
+                <a href="#" title="View Details"><i class="fa fa-eye"></i></a>
+                <a href="#" title="Edit User"><i class="fa fa-pen-to-square"></i></a>
+                <a href="#" title="Delete User" class="delete-icon"><i class="fa fa-trash"></i></a>
+            </td>
+        `;
         tbody.appendChild(tr);
     });
 }
 
-function addUser(){
-    const name = prompt("Enter User Name:");
-    const role = prompt("Enter Role (Superadmin/Admin/Client):");
-    const dept = prompt("Enter Department:");
-    if(name && role && dept){
-        const id = "USER-" + String(users.length + 1).padStart(3,'0');
-        users.push({id,name,role,dept});
-        renderUsers();
-    }
-}
-
-function editUser(id){
-    const user = users.find(u => u.id === id);
-    const name = prompt("Edit User Name:", user.name);
-    const role = prompt("Edit Role:", user.role);
-    const dept = prompt("Edit Department:", user.dept);
-    if(name && role && dept){
-        user.name = name;
-        user.role = role;
-        user.dept = dept;
-        renderUsers();
-    }
-}
-
-function deleteUser(id){
-    if(confirm("Are you sure you want to delete this user?")){
-        users = users.filter(u => u.id !== id);
-        renderUsers();
-    }
-}
-
-// Initial render
-renderUsers();
+renderTable();
 </script>
 {% endblock %}

@@ -1,87 +1,267 @@
 {% extends 'department/index.html' %}
 {% block content %}
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f4f4f4;
-        }
+<style>
+/* --- PAGE HEADER --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 10px 20px;
+}
 
-        .content {
-            margin-left: 140px;
-            padding: 20px;
-            transition: 0.3s;
-        }
+.page-title h2 {
+    margin: 0 0 5px 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+}
 
-        h1 {
-            margin-bottom: 20px;
-        }
+.page-title .small {
+    font-size: 13px;
+    color: #7f8c8d;
+}
 
-        /* Notification Cards */
-        .notif-card {
-            background: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 5px solid #b71c1c; /* red accent */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+/* --- BUTTONS & TABS (Purple Theme) --- */
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-        .notif-card h3 {
-            margin: 0 0 5px 0;
-            font-size: 17px;
-            font-weight: bold;
-        }
+.btn.mark-read {
+    padding: 8px 15px;
+    background-color: #6f42c1;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
 
-        .notif-card p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #444;
-        }
+.btn.mark-read:hover {
+    background-color: #5d36a3;
+}
 
-        .notif-time {
-            font-size: 12px;
-            color: gray;
-            margin-top: 8px;
-        }
+.notification-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    margin-bottom: 20px;
+}
 
-        /* Empty State */
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #555;
-        }
-    </style>
-</head>
+.tab-container {
+    flex-grow: 1;
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+}
 
-<body>
-    <div class="content">
-        <h1>Notifications</h1>
+.tab-button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    background: #f0f0f0;
+    color: #7f8c8d;
+    transition: all 0.2s;
+}
 
-        <!-- Example Notification Card -->
-        <div class="notif-card">
-            <h3>Document Approved</h3>
-            <p>Your document <strong>"Budget Request Form"</strong> has been approved by the admin.</p>
-            <div class="notif-time">2 hours ago</div>
-        </div>
+.tab-button.active {
+    background-color: #6f42c1;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(111, 66, 193, 0.3);
+}
 
-        <div class="notif-card">
-            <h3>Pending Review</h3>
-            <p>Your submitted document is currently under review. Please wait for further updates.</p>
-            <div class="notif-time">Yesterday</div>
-        </div>
+.tab-status {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
 
-        <div class="notif-card">
-            <h3>New Message</h3>
-            <p>The admin left a note on your last submission. Check the document details page.</p>
-            <div class="notif-time">3 days ago</div>
-        </div>
+/* --- NOTIFICATION LIST --- */
+.notification-list {
+    padding: 0 20px 20px 20px;
+}
 
-        <!-- Empty state (show only when no notifications) -->
-        <!--
-        <div class="empty">
-            No notifications yet.
-        </div>
-        -->
+.notification-card {
+    display: flex;
+    background: #fff;
+    margin-bottom: 12px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-left: 5px solid;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.notification-card.unread {
+    background-color: #f7f3ff;
+}
+
+.icon-box {
+    min-width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-right: 15px;
+    color: #fff;
+}
+
+/* Notification types colors */
+.approved .icon-box { background-color: #198754; }
+.approved { border-left-color: #198754; }
+
+.required .icon-box { background-color: #ffc107; }
+.required { border-left-color: #ffc107; }
+
+.received .icon-box { background-color: #0d6efd; }
+.received { border-left-color: #0d6efd; }
+
+.reminder .icon-box { background-color: #fd7e14; }
+.reminder { border-left-color: #fd7e14; }
+
+.returned .icon-box { background-color: #dc3545; }
+.returned { border-left-color: #dc3545; }
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-content .title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.notification-content .message {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.notification-content .timestamp {
+    display: block;
+    font-size: 11px;
+    color: #7f8c8d;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.notification-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 10px;
+    min-width: 30px;
+}
+
+.notification-actions a {
+    color: #7f8c8d;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+.notification-actions a:hover {
+    color: #dc3545;
+}
+
+.read-icon {
+    color: #198754;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+</style>
+
+<div class="page-header">
+    <div class="page-title">
+        <h2>Notifications</h2>
+        <div class="small">Stay updated with latest activities</div>
     </div>
+    <div class="top-actions">
+        <div class="tab-status">3 Unread</div>
+        <button class="btn mark-read"><i class="fa fa-check"></i>&nbsp; Mark All Read</button>
+    </div>
+</div>
+
+<div class="notification-tabs">
+    <div class="tab-container">
+        <button class="tab-button active" id="allTab">All Notifications (8)</button>
+    </div>
+    <div class="tab-status" id="unreadCountDisplay">Unread (3)</div>
+</div>
+
+<div class="notification-list" id="notificationList"></div>
+
+<script>
+const notifications = [
+    { id: 1, type: "approved", title: "Document Approved", message: "Your document **DOC-2025-001** has been approved by the Mayor.", timestamp: "2025-11-28 10:30:00", icon: "fa-check-circle", read: true },
+    { id: 2, type: "required", title: "Action Required", message: "Document **DOC-2025-005** requires your signature. Please review and sign.", timestamp: "2025-11-28 09:15:00", icon: "fa-exclamation-circle", read: false },
+    { id: 3, type: "received", title: "New Document Received", message: "A new document has been assigned to your office: **DOC-2025-012**", timestamp: "2025-11-28 08:00:00", icon: "fa-bell", read: false },
+    { id: 4, type: "reminder", title: "Deadline Reminder", message: "Document **DOC-2025-003** deadline is approaching. Due in 2 days.", timestamp: "2025-11-27 16:45:00", icon: "fa-hourglass-half", read: false },
+    { id: 5, type: "returned", title: "Document Returned", message: "Document **DOC-2025-007** has been returned for revision. Please check comments.", timestamp: "2025-11-27 10:00:00", icon: "fa-times", read: true },
+    { id: 6, type: "approved", title: "Document Approved", message: "Your document **DOC-2025-008** has been approved.", timestamp: "2025-11-26 15:00:00", icon: "fa-check-circle", read: true },
+    { id: 7, type: "received", title: "New Document Received", message: "Document **DOC-2025-010** is now in your queue.", timestamp: "2025-11-26 10:00:00", icon: "fa-bell", read: true },
+    { id: 8, type: "reminder", title: "Review Reminder", message: "Please review document **DOC-2025-002** by the end of the day.", timestamp: "2025-11-25 09:00:00", icon: "fa-hourglass-half", read: true }
+];
+
+function renderNotifications() {
+    const listContainer = document.getElementById("notificationList");
+    listContainer.innerHTML = "";
+
+    notifications.forEach(note => {
+        const card = document.createElement("div");
+        card.className = `notification-card ${note.type} ${note.read ? '' : 'unread'}`;
+        card.innerHTML = `
+            <div class="icon-box"><i class="fa ${note.icon}"></i></div>
+            <div class="notification-content">
+                <div class="title">${note.title}${!note.read ? ' <i class="fa fa-asterisk" style="font-size: 8px; color: ' + (note.type==='required'?'#ffc107':'#dc3545') + ';"></i>' : ''}</div>
+                <div class="message">${note.message}</div>
+                <span class="timestamp">${note.timestamp}</span>
+            </div>
+            <div class="notification-actions">
+                ${note.read ? '<i class="fa fa-check read-icon" title="Read"></i>' : '<i class="fa fa-circle" style="font-size: 8px; color: #dc3545; margin-bottom: 10px;" title="Unread"></i>'}
+                <a href="#" title="Delete" onclick="deleteNotification(${note.id}); return false;"><i class="fa fa-trash"></i></a>
+            </div>
+        `;
+        listContainer.appendChild(card);
+    });
+
+    updateCounts();
+}
+
+function updateCounts() {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    document.querySelector('.top-actions .tab-status').textContent = `${unreadCount} Unread`;
+    document.getElementById('unreadCountDisplay').textContent = `Unread (${unreadCount})`;
+    document.getElementById('allTab').textContent = `All Notifications (${notifications.length})`;
+}
+
+function deleteNotification(id) {
+    const index = notifications.findIndex(n => n.id === id);
+    if (index !== -1) {
+        notifications.splice(index, 1);
+        renderNotifications();
+    }
+}
+
+// Mark All Read
+document.querySelector('.btn.mark-read').addEventListener('click', () => {
+    notifications.forEach(n => n.read = true);
+    renderNotifications();
+});
+
+// Initial render
+document.addEventListener('DOMContentLoaded', renderNotifications);
+</script>
 {% endblock %}

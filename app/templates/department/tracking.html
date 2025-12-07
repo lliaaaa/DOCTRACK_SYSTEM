@@ -1,248 +1,477 @@
 {% extends 'department/index.html' %}
 {% block content %}
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        background: #f4f4f4;
-    }
+    /* --- PAGE HEADER --- */
+    .page-header {
+    padding: 15px 20px 8px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+}
 
-    /* HEADER */
-    .page-header {
-        padding: 18px 20px;
-        background: white;
-        border-bottom: 1px solid #e3e3e3;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
+.page-title h2 {
+    margin: 0 0 3px 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #2c3e50;
+}
 
-    .controls {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
+.page-title .small {
+    font-size: 12px;
+    color: #7f8c8d;
+}
 
-    .controls input,
-    .controls select {
-        padding: 9px 12px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        background: white;
-        min-width: 160px;
-    }
+/* --- SEARCH BAR --- */
+.search-container {
+    padding: 15px;
+    background: #fff;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
 
-    .btn {
-        padding: 10px 16px;
-        background: #b71c1c;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: 0.2s;
-    }
+.search-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
 
-    .btn:hover {
-        background: #8e1515;
-    }
+.search-form label {
+    font-weight: 500;
+    color: #34495e;
+    white-space: nowrap;
+}
 
-    /* TIMELINE CONTAINER FIX */
-    #timelineContainer {
-        background: white;
-        margin: 20px;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-    }
+.search-form input[type="text"] {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+}
 
-    /* TIMELINE BASE */
-    .timeline {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        position: relative;
-        margin-top: 10px;
-        padding-left: 20px;
-    }
+.search-form button {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: background-color 0.2s;
+}
 
-    .timeline::before {
-        content: "";
-        position: absolute;
-        left: 34px;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        background: #d3d3d3;
-        border-radius: 2px;
-    }
+.search-form button:hover {
+    background-color: #c82333;
+}
 
-    /* TIMELINE STEP */
-    .timeline-step {
-        padding: 14px 16px 14px 60px;
-        background: #fcfcfc;
-        border-radius: 8px;
-        position: relative;
-        border: 1px solid #e8e8e8;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
+/* --- DOCUMENT INFO & HISTORY --- */
+.tracking-details-container {
+    padding: 0 15px 15px 15px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
 
-    .timeline-step::before {
-        content: "";
-        position: absolute;
-        left: 25px;
-        top: 18px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ccc;
-        border: 2px solid white;
-        box-shadow: 0 0 0 2px #ccc;
-    }
+.doc-info, .tracking-history {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
 
-    .timeline-step h4 {
-        margin: 0 0 6px 0;
-        font-size: 16px;
-        font-weight: bold;
-    }
+/* Document info grid */
+.doc-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 8px;
+    font-size: 13px;
+}
 
-    .timeline-step p {
-        margin: 3px 0;
-        font-size: 14px;
-        color: #555;
-        line-height: 1.4;
-    }
+.info-item div:first-child {
+    font-size: 11px;
+    color: #7f8c8d;
+    font-weight: 500;
+    text-transform: uppercase;
+}
 
-    .small {
-        font-size: 13px;
-        color: #666;
-    }
+.info-item div:last-child {
+    font-weight: 600;
+    color: #34495e;
+}
 
-    /* COLOR VARIANTS */
-    .timeline-step.toreview {
-        border-left: 4px solid #6c757d;
-    }
+/* Current status badge */
+.current-status-badge {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffecb5;
+}
 
-    .timeline-step.toreview::before {
-        background: #6c757d;
-        box-shadow: 0 0 0 2px #6c757d;
-    }
+/* --- TRACKING HISTORY TIMELINE --- */
+.tracking-history h3 {
+    font-size: 16px;
+    margin: 0 0 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 6px;
+    color: #2c3e50;
+}
 
-    .timeline-step.processing {
-        border-left: 4px solid #17a2b8;
-    }
+.timeline {
+    position: relative;
+    padding-left: 20px;
+    margin-left: 10px;
+}
 
-    .timeline-step.processing::before {
-        background: #17a2b8;
-        box-shadow: 0 0 0 2px #17a2b8;
-    }
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: #e0e0e0;
+}
 
-    .timeline-step.forapproval {
-        border-left: 4px solid #0d6efd;
-    }
+.timeline-item {
+    position: relative;
+    margin-bottom: 15px;
+    padding-left: 18px;
+}
 
-    .timeline-step.forapproval::before {
-        background: #0d6efd;
-        box-shadow: 0 0 0 2px #0d6efd;
-    }
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
 
-    .timeline-step.completed {
-        border-left: 4px solid #198754;
-    }
+.timeline-item .circle {
+    position: absolute;
+    top: 0;
+    left: -3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #dc3545;
+    border: 2px solid #fff;
+    z-index: 1;
+}
 
-    .timeline-step.completed::before {
-        background: #198754;
-        box-shadow: 0 0 0 2px #198754;
+.timeline-item.completed .circle { background: #198754; }
+.timeline-item.pending .circle { background: #ffc107; }
+
+.timeline-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 13px;
+}
+
+.timeline-info {
+    flex-grow: 1;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.timeline-details {
+    color: #555;
+    font-size: 12px;
+}
+
+.timeline-date {
+    color: #7f8c8d;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* --- ALL DOCUMENTS TABLE --- */
+.all-docs-section {
+    padding: 15px;
+}
+
+.all-docs-section h3 {
+    font-size: 18px;
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+th, td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #34495e;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+th {
+    background-color: #ecf0f1;
+    font-weight: 600;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+tr:nth-child(odd) { background-color: #fcfcfc; }
+tr:hover { background-color: #f1f1f1; }
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-block;
+    text-align: center;
+}
+
+.s-mayor { background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+.s-bac { background-color: #cff4fc; color: #055160; border: 1px solid #cff4fc; }
+.s-accounting { background-color: #d1e7dd; color: #0f5132; border: 1px solid #d1e7dd; }
+.s-processing { background-color: #f8d7da; color: #842029; border: 1px solid #f8d7da; }
+.s-pr { background-color: #cfe2ff; color: #084298; border: 1px solid #cfe2ff; }
+
+@media (max-width: 768px) {
+    .doc-info-grid {
+        grid-template-columns: 1fr;
     }
+}
 </style>
-</head>
 
-<body>
+<div class="page-header">
+    <div class="page-title">
+        <h2>Document Tracking</h2>
+        <div class="small">Track the status and location of documents</div>
+    </div>
+</div>
 
-    <div class="page-header">
-        <div>
-            <h2 style="margin:0 0 6px 0">Document Tracking</h2>
-            <div class="small">Select a document to view its status timeline</div>
-        </div>
+<div class="search-container">
+    <form class="search-form" onsubmit="event.preventDefault(); trackDocument();">
+        <label for="docNumber">Track Document</label>
+        <input type="text" id="docNumberInput" placeholder="e.g., DOC-2025-001" value="DOC-2025-001" required>
+        <button type="submit">Track</button>
+    </form>
+</div>
 
-        <div class="controls">
-            <select id="selectDoc" onchange="renderTimeline()">
-                <option value="">Select document</option>
-            </select>
-            <button class="btn">Track</button>
-        </div>
-    </div>
+<div class="tracking-details-container">
+        <div id="trackedDocDetails">
+            </div>
+</div>
 
-    <script>
-        const documents = [
-            {
-                id: "DOC-001",
-                title: "Purchase Request - Laptops",
-                timeline: [
-                    { status: "To-Review", dept: "IT", date: "2025-11-10 09:00", remarks: "Newly submitted document" },
-                    { status: "Processing", dept: "IT", date: "2025-11-10 11:30", remarks: "Started processing" },
-                    { status: "For Approval", dept: "Finance", date: "2025-11-11 10:30", remarks: "Awaiting budget approval" },
-                    { status: "Completed", dept: "IT", date: "2025-11-12 15:45", remarks: "Approved and finalized" }
-                ]
-            },
-            {
-                id: "DOC-002",
-                title: "Budget Proposal 2026",
-                timeline: [
-                    { status: "To-Review", dept: "Accounting", date: "2025-11-08 08:20", remarks: "Draft created" },
-                    { status: "Processing", dept: "Accounting", date: "2025-11-08 12:00", remarks: "Checked for completeness" },
-                    { status: "For Approval", dept: "Superadmin", date: "2025-11-09 11:10", remarks: "Sent for approval" }
-                ]
-            }
-        ];
+<div class="all-docs-section">
+    <h3>All Documents Status</h3>
+    <div class="table-wrapper">
+        <table id="allDocsTable">
+            <thead>
+                <tr>
+                    <th>Doc Number</th>
+                    <th>Title</th>
+                    <th>Implementing Office</th>
+                    <th>Released By</th>
+                    <th>Received By</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                            </tbody>
+        </table>
+    </div>
+</div>
 
-        // Populate select dropdown
-        const selectDoc = document.getElementById("selectDoc");
-        documents.forEach(doc => {
-            const option = document.createElement("option");
-            option.value = doc.id;
-            option.textContent = `${doc.id} - ${doc.title}`;
-            selectDoc.appendChild(option);
-        });
+<script>
+// --- Sample Data ---
 
-        function renderTimeline() {
-            const container = document.getElementById("timelineContainer");
-            const searchVal = document.getElementById("searchInput").value.toLowerCase();
-            const selectedId = selectDoc.value;
+const documentsData = [
+    { 
+        docNumber: "DOC-2025-001", 
+        title: "Budget Request for Q1 2025", 
+        type: "SVP", 
+        implementingOffice: "Budget Office", 
+        releasedBy: "John Doe", 
+        receivedBy: "Jane Smith", 
+        dateReceived: "2025-01-15",
+        currentStatus: "For Signature Mayor",
+        statusClass: "s-mayor",
+        history: [
+            { title: "Document Received", by: "Jane Smith", office: "Budget Office", status: "completed", date: "2025-01-15" },
+            { title: "For Signature Mayor", by: "John Doe", office: "Budget Office", status: "current", date: "2025-02-07" },
+            { title: "Awaiting Next Action", by: "N/A", office: "Budget Office", status: "pending", date: null }
+        ]
+    },
+    { 
+        docNumber: "DOC-2025-002", 
+        title: "Road Construction Bidding", 
+        type: "BIDDING", 
+        implementingOffice: "Engineering Office", 
+        releasedBy: "Mark Johnson", 
+        receivedBy: "Sarah Williams", 
+        dateReceived: "2025-01-18",
+        currentStatus: "For Signatures of BAC Members - BAC Office",
+        statusClass: "s-bac",
+        history: [
+            { title: "Document Received", by: "Sarah Williams", office: "Engineering Office", status: "completed", date: "2025-01-18" },
+            { title: "For BAC Review", by: "Mark Johnson", office: "BAC Office", status: "current", date: "2025-02-01" },
+            { title: "Approval Awaited", by: "N/A", office: "BAC Office", status: "pending", date: null }
+        ]
+    },
+    { 
+        docNumber: "DOC-2025-003", 
+        title: "Diesel Reimbursement - Agriculture", 
+        type: "REIMBURSEMENT OF DIESEL", 
+        implementingOffice: "Agriculture Office", 
+        releasedBy: "Robert Brown", 
+        receivedBy: "Emily Davis", 
+        dateReceived: "2025-01-20",
+        currentStatus: "For Accounting Staff Validation",
+        statusClass: "s-accounting",
+        history: [
+            { title: "Document Filed", by: "Robert Brown", office: "Agriculture Office", status: "completed", date: "2025-01-20" },
+            { title: "For Staff Validation", by: "Emily Davis", office: "Accounting Office", status: "current", date: "2025-01-22" },
+            { title: "Payment Preparation", by: "N/A", office: "Treasury Office", status: "pending", date: null }
+        ]
+    },
+    { 
+        docNumber: "DOC-2025-004", 
+        title: "Medical Assistance - Patient A", 
+        type: "MEDICAL ASSISTANCE", 
+        implementingOffice: "Municipal Health Office", 
+        releasedBy: "Dr. Michael Wilson", 
+        receivedBy: "Nurse Maria Garcia", 
+        dateReceived: "2025-01-22",
+        currentStatus: "For Processing",
+        statusClass: "s-processing",
+        history: [
+            { title: "Filed and Received", by: "Nurse Maria Garcia", office: "Municipal Health Office", status: "completed", date: "2025-01-22" },
+            { title: "For Processing", by: "Dr. Michael Wilson", office: "Municipal Health Office", status: "current", date: "2025-01-23" },
+            { title: "Awaiting Release", by: "N/A", office: "Municipal Health Office", status: "pending", date: null }
+        ]
+    },
+    { 
+        docNumber: "DOC-2025-005", 
+        title: "Campaign Tarpaulin Reimbursement", 
+        type: "REIMBURSEMENT OF TARPAULIN", 
+        implementingOffice: "Mayor Office", 
+        releasedBy: "Mayor Rodriguez", 
+        receivedBy: "Admin Staff", 
+        dateReceived: "2025-01-25",
+        currentStatus: "Request for PR",
+        statusClass: "s-pr",
+        history: [
+            { title: "Document Received", by: "Admin Staff", office: "Mayor Office", status: "completed", date: "2025-01-25" },
+            { title: "Request for PR", by: "Mayor Rodriguez", office: "Mayor Office", status: "current", date: "2025-01-26" },
+            { title: "Awaiting PR Number", by: "N/A", office: "GSO", status: "pending", date: null }
+        ]
+    }
+];
 
-            container.innerHTML = "";
+// --- Rendering Functions ---
 
-            let doc;
-            if (selectedId) {
-                doc = documents.find(d => d.id === selectedId);
-            } else if (searchVal) {
-                doc = documents.find(d => (d.id.toLowerCase() + d.title.toLowerCase()).includes(searchVal));
-            }
+function getStatusBadgeHtml(status, className) {
+    return `<span class="status-badge ${className}">${status}</span>`;
+}
 
-            if (!doc) {
-                container.innerHTML = `<p class="small">No document selected or found.</p>`;
-                return;
-            }
+function renderAllDocsTable() {
+    const tbody = document.getElementById("allDocsTable").querySelector("tbody");
+    tbody.innerHTML = "";
 
-            const timelineDiv = document.createElement("div");
-            timelineDiv.className = "timeline";
+    documentsData.forEach(doc => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${doc.docNumber}</td>
+            <td>${doc.title}</td>
+            <td>${doc.implementingOffice}</td>
+            <td>${doc.releasedBy}</td>
+            <td>${doc.receivedBy}</td>
+            <td>${getStatusBadgeHtml(doc.currentStatus, doc.statusClass)}</td>
+            <td>${doc.dateReceived}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-            doc.timeline.forEach(step => {
-                const stepDiv = document.createElement("div");
-                stepDiv.className = `timeline-step ${step.status.toLowerCase().replace(" ", "")}`;
-                stepDiv.innerHTML = `<h4>${step.status}</h4>
-                             <p><strong>Department:</strong> ${step.dept}</p>
-                             <p><strong>Date:</strong> ${step.date}</p>
-                             <p><strong>Remarks:</strong> ${step.remarks}</p>`;
-                timelineDiv.appendChild(stepDiv);
-            });
+function renderTrackedDocument(doc) {
+    const detailsContainer = document.getElementById("trackedDocDetails");
+    if (!doc) {
+        detailsContainer.innerHTML = `<div style="text-align: center; padding: 50px; color: #7f8c8d; background: #fff; border-radius: 8px;">Document not found. Please enter a valid Document Number.</div>`;
+        return;
+    }
 
-            container.appendChild(timelineDiv);
-        }
-    </script>
+    const statusBadge = getStatusBadgeHtml(doc.currentStatus, doc.statusClass);
+
+    // 1. Document Information Section
+    let infoHtml = `
+        <div class="doc-info">
+            <h3>Document Information</h3>
+            <div class="doc-info-grid">
+                <div class="info-item"><div>Document Number</div><div>${doc.docNumber}</div></div>
+                <div class="info-item"><div>Title</div><div>${doc.title}</div></div>
+                <div class="info-item"><div>Type</div><div>${doc.type}</div></div>
+
+                <div class="info-item"><div>Implementing Office</div><div>${doc.implementingOffice}</div></div>
+                <div class="info-item"><div>Released By</div><div>${doc.releasedBy}</div></div>
+                <div class="info-item"><div>Received By</div><div>${doc.receivedBy}</div></div>
+                
+                <div class="info-item"><div>Current Status</div><div><span class="current-status-badge">${doc.currentStatus}</span></div></div>
+                <div class="info-item"><div>Date Received</div><div>${doc.dateReceived}</div></div>
+            </div>
+        </div>
+    `;
+    
+    // 2. Tracking History Section
+    let historyHtml = `
+        <div class="tracking-history">
+            <h3>Tracking History</h3>
+            <div class="timeline">
+                ${doc.history.map(item => `
+                    <div class="timeline-item ${item.status}">
+                        <span class="circle"></span>
+                        <div class="timeline-content">
+                            <div class="timeline-info">
+                                <div class="timeline-title">${item.title}</div>
+                                <div class="timeline-details">
+                                    ${item.office} <span style="color:#2c3e50; font-weight:500;">By ${item.by}</span>
+                                </div>
+                            </div>
+                            <div class="timeline-date">${item.date || ''}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    detailsContainer.innerHTML = infoHtml + historyHtml;
+}
+
+function trackDocument() {
+    const docNumber = document.getElementById("docNumberInput").value.trim().toUpperCase();
+    const foundDoc = documentsData.find(doc => doc.docNumber === docNumber);
+    renderTrackedDocument(foundDoc);
+}
+
+// Initial load: Render the All Documents Table and track the first document (DOC-2025-001)
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllDocsTable();
+    trackDocument();
+});
+</script>
 {% endblock %}

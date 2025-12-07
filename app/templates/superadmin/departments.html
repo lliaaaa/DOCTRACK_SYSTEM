@@ -1,94 +1,247 @@
 {% extends 'superadmin/index.html' %}
 {% block content %}
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; }
-.page-header { padding:18px 20px; background:white; border-bottom:1px solid #e6e6e6; }
-.table-container { padding:20px; }
-table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
-th, td { padding:12px 8px; text-align:left; border-bottom:1px solid #eee; }
-th { background:#f7f7f7; }
-button { padding:6px 12px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
-.edit-btn { background:#0d6efd; color:white; }
-.delete-btn { background:#dc3545; color:white; }
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px 10px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+}
+
+.page-title h2 {
+    margin: 0 0 3px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.page-title .small {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 13px;
+}
+
+.btn.primary {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+.btn.primary:hover {
+    background-color: #c82333;
+}
+
+/* --- CARD GRID LAYOUT --- */
+.card-grid-container {
+    padding: 15px 20px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+/* --- DEPARTMENT CARD --- */
+.dept-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dept-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Header */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.dept-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.dept-icon {
+    font-size: 24px;
+    color: #dc3545;
+    margin-bottom: 4px;
+}
+
+.dept-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.dept-head {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* Card Actions */
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.card-actions a {
+    font-size: 14px;
+    color: #7f8c8d;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.card-actions a:hover {
+    color: #2c3e50;
+}
+
+.card-actions .delete-icon {
+    color: #dc3545;
+}
+
+/* Card Body */
+.card-body div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #555;
+}
+
+.card-body i {
+    color: #7f8c8d;
+    margin-right: 5px;
+}
+
+/* Card Contact */
+.card-contact {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #eee;
+    font-size: 12px;
+    color: #555;
+}
+
+.card-contact div {
+    margin-bottom: 2px;
+}
+
+.card-contact a {
+    color: #dc3545;
+    text-decoration: none;
+}
+
+.card-contact a:hover {
+    text-decoration: underline;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 200px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .card-actions {
+        justify-content: flex-start;
+    }
+}
 </style>
-</head>
-<body>
 
 <div class="page-header">
-    <h2 style="margin:0;">Departments Management</h2>
-    <div class="small">View and manage all departments</div>
+    <div class="page-title">
+        <h2>Departments</h2>
+        <div class="small">Manage municipal departments and offices</div>
+    </div>
+    <div>
+        <button class="btn primary"><i class="fa fa-plus"></i>&nbsp; Add Department</button>
+    </div>
 </div>
 
-<div class="table-container">
-    <button onclick="addDepartment()">Add Department</button>
-    <table id="deptTable">
-        <thead>
-            <tr>
-                <th>Department ID</th>
-                <th>Name</th>
-                <th>Head</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Populated by JS -->
-        </tbody>
-    </table>
+<div class="card-grid-container">
+    <div class="card-grid" id="deptGrid">
+            </div>
 </div>
 
 <script>
-// Sample department data
-let departments = [
-    {id:"DEPT-001", name:"Finance", head:"Alice"},
-    {id:"DEPT-002", name:"HR", head:"Bob"},
-    {id:"DEPT-003", name:"IT", head:"Charlie"}
+const departments = [
+    { id: 1, name: "ABC Office", head: "Head 1", employees: 18, documents: 0, contact: "(02) 8XXX-XXXX", email: "abc.office@gov.ph" },
+    { id: 2, name: "Accounting Office", head: "Head 2", employees: 13, documents: 1, contact: "(02) 8XXX-XXX1", email: "accounting.office@gov.ph" },
+    { id: 3, name: "Agriculture Office", head: "Head 3", employees: 17, documents: 1, contact: "(02) 8XXX-XXX2", email: "agriculture.office@gov.ph" },
+    { id: 4, name: "Assessor Office", head: "Head 4", employees: 14, documents: 1, contact: "(02) 8XXX-XXX3", email: "assessor.office@gov.ph" },
+    { id: 5, name: "Bids and Awards Committee", head: "Head 5", employees: 9, documents: 0, contact: "(02) 8XXX-XXX4", email: "bids.and.awards.committee@gov.ph" },
+    { id: 6, name: "Budget Office", head: "Head 6", employees: 22, documents: 1, contact: "(02) 8XXX-XXX5", email: "budget.office@gov.ph" },
+    { id: 7, name: "Civil Registrar Office", head: "Head 7", employees: 11, documents: 0, contact: "(02) 8XXX-XXX6", email: "civil.registrar.office@gov.ph" },
+    { id: 8, name: "COMELEC Office", head: "Head 8", employees: 5, documents: 0, contact: "(02) 8XXX-XXX7", email: "comelec.office@gov.ph" },
+    { id: 9, name: "Engineering Office", head: "Head 9", employees: 19, documents: 1, contact: "(02) 8XXX-XXX8", email: "engineering.office@gov.ph" },
+    { id: 10, name: "General Services Office", head: "Head 10", employees: 25, documents: 2, contact: "(02) 8XXX-XXX9", email: "general.services.office@gov.ph" },
 ];
 
-function renderTable() {
-    const tbody = document.getElementById("deptTable").querySelector("tbody");
-    tbody.innerHTML = "";
-    departments.forEach(dept => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${dept.id}</td>
-                        <td>${dept.name}</td>
-                        <td>${dept.head}</td>
-                        <td>
-                            <button class="edit-btn" onclick="editDepartment('${dept.id}')">Edit</button>
-                            <button class="delete-btn" onclick="deleteDepartment('${dept.id}')">Delete</button>
-                        </td>`;
-        tbody.appendChild(tr);
-    });
-}
+function renderDepartments() {
+    const grid = document.getElementById("deptGrid");
+    grid.innerHTML = "";
 
-function addDepartment() {
-    const name = prompt("Enter Department Name:");
-    const head = prompt("Enter Department Head:");
-    if(name && head){
-        const id = "DEPT-" + String(departments.length + 1).padStart(3,'0');
-        departments.push({id,name,head});
-        renderTable();
-    }
-}
-
-function editDepartment(id) {
-    const dept = departments.find(d => d.id === id);
-    const name = prompt("Edit Department Name:", dept.name);
-    const head = prompt("Edit Department Head:", dept.head);
-    if(name && head){
-        dept.name = name;
-        dept.head = head;
-        renderTable();
-    }
-}
-
-function deleteDepartment(id){
-    if(confirm("Are you sure you want to delete this department?")){
-        departments = departments.filter(d => d.id !== id);
-        renderTable();
-    }
+    departments.forEach(dept => {
+        const card = document.createElement("div");
+        card.className = "dept-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="dept-info">
+                    <div class="dept-icon"><i class="fa fa-folder-open"></i></div>
+                    <div class="dept-title">${dept.name}</div>
+                    <div class="dept-head">${dept.head}</div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" title="Edit"><i class="fa fa-edit"></i></a>
+                    <a href="#" title="Delete" class="delete-icon"><i class="fa fa-trash"></i></a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div>
+                    <span><i class="fa fa-users"></i> Employees</span>
+                    <span>${dept.employees}</span>
+                </div>
+                <div>
+                    <span><i class="fa fa-file-alt"></i> Documents</span>
+                    <span>${dept.documents}</span>
+                </div>
+            </div>
+            <div class="card-contact">
+                <div>Contact: ${dept.contact}</div>
+                <div>Email: <a href="mailto:${dept.email}">${dept.email}</a></div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 // Initial render
-renderTable();
+renderDepartments();
 </script>
 {% endblock %}
