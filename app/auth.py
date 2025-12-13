@@ -5,25 +5,12 @@ from . import db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-@bp.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-
-        password = request.form.get("password")
-
-        password_regex = r'^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
-
-        if not re.match(password_regex, password):
-            flash("Password must be at least 8 characters long, include one uppercase letter, one number, and one special character.", "danger")
-            return redirect(url_for("main.register"))
-        flash("Account created!", "success")
-        return redirect(url_for("main.home"))
-
-    return render_template("register.html")
-
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():
+    # Get role from URL parameter (GET) or form hidden input (POST)
+    role = request.args.get("role") or request.form.get("role") or "office"
+
     if request.method == "POST":
         email = request.form["email"].lower()
         password = request.form["password"]
@@ -32,17 +19,25 @@ def login():
 
         # Check login
         if user and user.check_password(password):
+            if user.role != role:
+                flash(f"You are not authorized for {role} login.", "danger")
+                return redirect(url_for("auth.login", role=role))
+
+            # Save session
             session["user_id"] = user.id
             session["role"] = user.role
+
+            # Redirect based on role
             if user.role == "admin":
                 return redirect(url_for("main.superadmin_home"))
-
             else:
                 return redirect(url_for("main.department_home"))
 
         flash("Invalid email or password", "danger")
+        return redirect(url_for("auth.login", role=role))
 
-    return render_template("login.html")
+    # GET request
+    return render_template("login.html", role=role)
 
 
 @bp.route("/logout")

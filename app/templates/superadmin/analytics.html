@@ -35,6 +35,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .card-info .label {
@@ -54,15 +55,15 @@
 }
 
 /* Card colors */
-.total-card { border-left-color: #0d6efd; }
-.pending-card { border-left-color: #ffc107; }
-.completed-card { border-left-color: #198754; }
-.rate-card { border-left-color: #6f42c1; }
+.total-card { border-left-color: #0d6efd; color: #0d6efd; }
+.pending-card { border-left-color: #ffc107; color: #ffc107; }
+.completed-card { border-left-color: #198754; color: #198754; }
+.rate-card { border-left-color: #6f42c1; color: #6f42c1; }
 
-.total-card .value, .total-card .card-icon { color: #0d6efd; }
-.pending-card .value, .pending-card .card-icon { color: #ffc107; }
-.completed-card .value, .completed-card .card-icon { color: #198754; }
-.rate-card .value, .rate-card .card-icon { color: #6f42c1; }
+.total-card .card-icon { color: #0d6efd; }
+.pending-card .card-icon { color: #ffc107; }
+.completed-card .card-icon { color: #198754; }
+.rate-card .card-icon { color: #6f42c1; }
 
 /* --- CHART GRID --- */
 .chart-grid {
@@ -77,7 +78,16 @@
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    min-height: 350px;
+    min-height: 250px; /* smaller default height */
+    max-height: 350px; /* optional cap */
+    box-sizing: border-box;
+}
+
+/* Responsive height for smaller screens */
+@media (max-width: 768px) {
+    .chart-box {
+        min-height: 200px;
+    }
 }
 
 .chart-box h3 {
@@ -109,210 +119,117 @@
 }
 </style>
 
-</style>
-
 <div class="page-header">
-    <div class="page-title">
-        <h2>Analytics</h2>
-        <div class="small">Document tracking analytics and insights</div>
-    </div>
+    <div class="page-title">
+        <h2>Analytics</h2>
+        <div class="small">Document tracking analytics and insights</div>
+    </div>
 </div>
 
 <div class="summary-cards">
-    <div class="card total-card">
-        <div class="card-info">
-            <div class="label">Total Documents</div>
-            <div class="value" id="totalDocuments">15</div>
-        </div>
-        <div class="card-icon"><i class="fa fa-file-alt"></i></div>
-    </div>
+    <div class="card total-card">
+        <div class="card-info">
+            <div class="label">Total Documents</div>
+            <div class="value" id="totalDocuments">15</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-file-alt"></i></div>
+    </div>
 
-    <div class="card pending-card">
-        <div class="card-info">
-            <div class="label">Pending</div>
-            <div class="value" id="pendingDocuments">2</div>
-        </div>
-        <div class="card-icon"><i class="fa fa-clock"></i></div>
-    </div>
+    <div class="card pending-card">
+        <div class="card-info">
+            <div class="label">Pending</div>
+            <div class="value" id="pendingDocuments">2</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-clock"></i></div>
+    </div>
 
-    <div class="card completed-card">
-        <div class="card-info">
-            <div class="label">Completed</div>
-            <div class="value" id="completedDocuments">3</div>
-        </div>
-        <div class="card-icon"><i class="fa fa-check-circle"></i></div>
-    </div>
+    <div class="card completed-card">
+        <div class="card-info">
+            <div class="label">Completed</div>
+            <div class="value" id="completedDocuments">3</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-check-circle"></i></div>
+    </div>
 
-    <div class="card rate-card">
-        <div class="card-info">
-            <div class="label">Completion Rate</div>
-            <div class="value" id="completionRate">20.0%</div>
-        </div>
-        <div class="card-icon"><i class="fa fa-chart-line"></i></div>
-    </div>
+    <div class="card rate-card">
+        <div class="card-info">
+            <div class="label">Completion Rate</div>
+            <div class="value" id="completionRate">20.0%</div>
+        </div>
+        <div class="card-icon"><i class="fa fa-chart-line"></i></div>
+    </div>
 </div>
 
 <div class="chart-grid">
-        <div class="chart-box">
-        <h3>Documents by Status</h3>
-                <canvas id="statusBarChart"></canvas>
-    </div>
+    <div class="chart-box">
+        <h3>Documents by Status</h3>
+        <canvas id="statusBarChart"></canvas>
+    </div>
 
-        <div class="chart-box">
-        <h3>Documents by Type</h3>
-                <canvas id="typePieChart"></canvas>
-    </div>
+    <div class="chart-box">
+        <h3>Documents by Type</h3>
+        <canvas id="typePieChart"></canvas>
+    </div>
 </div>
 
 <div class="chart-grid-bottom">
-        <div class="chart-box">
-        <h3>Top Departments by Document Count</h3>
-                <canvas id="departmentBarChart"></canvas>
-    </div>
+    <div class="chart-box">
+        <h3>Top Departments by Document Count</h3>
+        <canvas id="departmentBarChart"></canvas>
+    </div>
 
-        <div class="chart-box">
-        <h3>Document Trend (Last 6 Months)</h3>
-                <canvas id="trendLineChart"></canvas>
-    </div>
+    <div class="chart-box">
+        <h3>Document Trend (Last 6 Months)</h3>
+        <canvas id="trendLineChart"></canvas>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 <script>
-// --- Sample Data for Charts (Based on the image) ---
-const chartData = {
-    // Documents by Status (Bar Chart)
-    statusLabels: ["For Signature Mayor", "Request for PR", "Request for PO", "Request for CBR", "Signatures of BAC...", "Accounting Staff...", "For Processing", "With Checked"],
-    statusCounts: [2, 2, 1, 1, 2, 2, 2, 3],
-    
-    // Documents by Type (Pie Chart)
-    typeLabels: ["SVP", "BIDDING", "DIESEL", "TARPAULIN", "MEDICAL", "BURIAL", "T.E.R"],
-    typeCounts: [7, 2, 1, 1, 1, 1, 2],
-    
-    // Top Departments (Horizontal Bar Chart)
-    deptLabels: ["Mayor", "Engineering", "Budget", "Agriculture", "Municipal Health"],
-    deptCounts: [1.0, 1.0, 1.5, 1.5, 2.0], // Values approximated from the visual scale
-
-    // Document Trend (Line Chart)
-    trendLabels: ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov"],
-    trendData: [40, 50, 48, 55, 60, 15] // Mocked trend data
-};
-
-const colors = {
-    primary: '#dc3545', 
-    secondary: '#0d6efd',
-    success: '#198754',
-    warning: '#ffc107',
-    info: '#17a2b8',
-    purple: '#6f42c1',
-    lightGray: '#e9ecef',
-};
-
-// --- Chart Rendering Functions ---
-
-function createStatusBarChart() {
-    const ctx = document.getElementById('statusBarChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: chartData.statusLabels,
-            datasets: [{
-                data: chartData.statusCounts,
-                backgroundColor: colors.secondary, // Blue color for all bars
-                borderColor: colors.secondary,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true },
-                x: { ticks: { autoSkip: false, maxRotation: 90, minRotation: 90 } } // Rotate x-labels for space
-            }
-        }
-    });
-}
-
-function createTypePieChart() {
-    const ctx = document.getElementById('typePieChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: chartData.typeLabels.map((label, i) => `${label}: ${chartData.typeCounts[i]}`),
-            datasets: [{
-                data: chartData.typeCounts,
-                backgroundColor: [colors.secondary, colors.info, colors.warning, colors.primary, colors.purple, colors.success, colors.lightGray]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'right' }
-            }
-        }
-    });
-}
-
-function createDepartmentBarChart() {
-    const ctx = document.getElementById('departmentBarChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: chartData.deptLabels.reverse(), // Reverse labels and data to match image (Municipal Health on top)
-            datasets: [{
-                data: chartData.deptCounts.reverse(),
-                backgroundColor: colors.success, // Green color
-                borderColor: colors.success,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Makes it a horizontal bar chart
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, max: 2.5 }, // Set max to 2.5 to match visual scale
-                y: { grid: { display: false } }
-            }
-        }
-    });
-}
-
-function createTrendLineChart() {
-    const ctx = document.getElementById('trendLineChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: chartData.trendLabels,
-            datasets: [{
-                label: 'documents',
-                data: chartData.trendData,
-                fill: false,
-                borderColor: colors.purple, // Purple color
-                tension: 0.3 // Smooth line
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: true, position: 'bottom' } },
-            scales: {
-                y: { beginAtZero: true, max: 80 }, // Set max to 80 to match visual scale
-            }
-        }
-    });
-}
-
-// Initialize all charts when the content is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Ensure Chart.js script is loaded before calling these functions
-    createStatusBarChart();
-    createTypePieChart();
-    createDepartmentBarChart();
-    createTrendLineChart();
+    const chartData = {
+        statusLabels: ["For Signature Mayor","Request for PR","Request for PO","Request for CBR","Signatures of BAC...","Accounting Staff...","For Processing","With Checked"],
+        statusCounts: [2,2,1,1,2,2,2,3],
+        typeLabels: ["SVP","BIDDING","DIESEL","TARPAULIN","MEDICAL","BURIAL","T.E.R"],
+        typeCounts: [7,2,1,1,1,1,2],
+        deptLabels: ["Mayor","Engineering","Budget","Agriculture","Municipal Health"],
+        deptCounts: [1.0,1.0,1.5,1.5,2.0],
+        trendLabels: ["Jun","Jul","Aug","Sep","Oct","Nov"],
+        trendData: [40,50,48,55,60,15]
+    };
+
+    const colors = {
+        primary: '#dc3545', secondary: '#0d6efd', success: '#198754',
+        warning: '#ffc107', info: '#17a2b8', purple: '#6f42c1', lightGray: '#e9ecef'
+    };
+
+    // Status Bar Chart
+    new Chart(document.getElementById('statusBarChart'), {
+        type: 'bar',
+        data: { labels: chartData.statusLabels, datasets:[{ data: chartData.statusCounts, backgroundColor: colors.secondary }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true}, x:{ ticks:{autoSkip:false, maxRotation:90, minRotation:90 } } } }
+    });
+
+    // Type Pie Chart
+    new Chart(document.getElementById('typePieChart'), {
+        type: 'doughnut',
+        data: { labels: chartData.typeLabels.map((l,i)=>`${l}: ${chartData.typeCounts[i]}`), datasets:[{ data: chartData.typeCounts, backgroundColor:[colors.secondary,colors.info,colors.warning,colors.primary,colors.purple,colors.success,colors.lightGray] }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
+    });
+
+    // Department Horizontal Bar Chart
+    new Chart(document.getElementById('departmentBarChart'), {
+        type: 'bar',
+        data: { labels: chartData.deptLabels.reverse(), datasets:[{ data: chartData.deptCounts.reverse(), backgroundColor: colors.success }] },
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true, max:2.5}, y:{grid:{display:false}} } }
+    });
+
+    // Trend Line Chart
+    new Chart(document.getElementById('trendLineChart'), {
+        type: 'line',
+        data: { labels: chartData.trendLabels, datasets:[{ label:'Documents', data: chartData.trendData, fill:false, borderColor: colors.purple, tension:0.3 }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'bottom'}}, scales:{ y:{beginAtZero:true, max:80} } }
+    });
 });
 </script>
 {% endblock %}

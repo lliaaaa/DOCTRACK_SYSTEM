@@ -27,6 +27,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 10px;
     border-top: 5px solid transparent;
 }
@@ -36,29 +37,24 @@
 .card.completed { border-top-color: #198754; }
 .card.inprogress { border-top-color: #fd7e14; }
 
-.card-header {
+.card h3 { margin: 0; font-size: 16px; color: #333; }
+.card h1 { margin: 0; font-size: 28px; color: #b71c1c; }
+
+/* CONTROLS */
+.controls-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.card-icon-container {
-    font-size: 24px;
+.controls-container input,
+.controls-container select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }
 
-.card h3 {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-}
-
-.card h1 {
-    margin: 0;
-    font-size: 28px;
-    color: #b71c1c;
-}
-
-/* RECENT DOCUMENTS TABLE */
+/* DOCUMENT TABLE */
 .recent-documents, .document-status-breakdown {
     background: white;
     padding: 20px;
@@ -75,22 +71,12 @@
 
 .document-table th, .document-table td {
     text-align: left;
-    padding: 12px 0;
+    padding: 10px;
     border-bottom: 1px solid #eee;
     font-size: 14px;
 }
 
-.document-table th:nth-child(1) { width: 10%; }
-.document-table th:nth-child(2) { width: 30%; }
-.document-table th:nth-child(3) { width: 25%; }
-.document-table th:nth-child(4) { width: 15%; }
-.document-table th:nth-child(5) { width: 20%; }
-
-.document-table th {
-    font-weight: bold;
-    color: #555;
-    text-transform: uppercase;
-}
+.document-table th { font-weight: bold; color: #555; text-transform: uppercase; }
 
 .status-badge {
     display: inline-block;
@@ -98,11 +84,19 @@
     border-radius: 4px;
     font-size: 12px;
     font-weight: bold;
-    white-space: nowrap;
     color: #333;
     background-color: #ffc10740;
     border: 1px solid #ffc107;
 }
+
+/* ACTION ICONS */
+.action-icons i {
+    margin-right: 8px;
+    cursor: pointer;
+    color: #555;
+}
+
+.action-icons i:hover { color: #000; }
 
 /* DOCUMENT STATUS BREAKDOWN */
 .breakdown-grid {
@@ -116,20 +110,12 @@
     background: #f9f9f9;
     padding: 15px;
     border-radius: 6px;
+    text-align: center;
     border-left: 5px solid #b71c1c;
 }
 
-.breakdown-item p {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
-}
-
-.breakdown-item h2 {
-    margin: 5px 0 0 0;
-    font-size: 24px;
-    color: #b71c1c;
-}
+.breakdown-item p { margin: 0; font-size: 14px; color: #666; }
+.breakdown-item h2 { margin: 5px 0 0 0; font-size: 24px; color: #b71c1c; }
 
 /* Dashboard title/greeting */
 h1.dashboard-title {
@@ -142,97 +128,133 @@ h1.dashboard-title {
     margin-bottom: 20px;
     color: #777;
 }
-
-/* Hide chart grid */
-.chart-grid {
-    display: none;
-}
 </style>
 
 <div class="content" id="content">
     <h1 class="dashboard-title">Documents</h1>
     <p class="greeting-text">Manage and track all documents</p>
-    <div>
-        <button class="btn primary" onclick="openAddModal()"><i class="fa fa-plus"></i>&nbsp; Add
-        Document</button>
-    </div>
 
+    <!-- FILTER CONTROLS -->
     <div class="controls-container">
-            <input id="searchInput" type="search" placeholder="Search documents..." oninput="renderTable()" />
-            <select id="filterDept" onchange="renderTable()">
-                    <option value="">All Departments</option>
-                    <option>Budget Office</option>
-                    <option>Engineering Office</option>
-                    <option>Agriculture Office</option>
-                    <option>Municipal Health Office</option>
-                    <option>Mayor Office</option>
-                </select>
+        <input id="searchInput" type="search" placeholder="Search documents..." oninput="renderTable()" />
+        <select id="filterDept" onchange="renderTable()">
+            <option value="">All Departments</option>
+            <option>Budget Office</option>
+            <option>Engineering Office</option>
+            <option>Agriculture Office</option>
+            <option>Municipal Health Office</option>
+            <option>Mayor Office</option>
+        </select>
+        <select id="filterStatus" onchange="toggleExtraDropdown(); renderTable();">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="inprogress">In Progress</option>
+        </select>
+        <select id="filterExtraStatus" onchange="renderTable()" style="display:none;">
+            <option value="">Select Specific Status</option>
+            <option>Request for PR</option>
+            <option>Request for PO</option>
+            <option>Request for OBR</option>
+            <option>For Signature BAC Members - BAC Office</option>
+            <option>For Accounting Staff Validation</option>
+            <option>For Processing</option>
+        </select>
+
     </div>
 
+    <!-- DOCUMENT TABLE -->
     <div class="recent-documents">
-        <h3 style="margin-bottom: 15px; font-size: 18px; color: #333;">Recent Documents</h3>
         <table class="document-table">
             <thead>
                 <tr>
-                    <th>DOC. Number</th>
+                    <th>Doc Number</th>
                     <th>Title</th>
+                    <th>Type</th>
                     <th>Implementing Office</th>
                     <th>Date</th>
+                    <th>Released By</th>
+                    <th>Received By</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
+                {% for record in records %}
                 <tr>
-                    <td>DOC-2025-001</td>
-                    <td>Budget Request for Q1 2025</td>
-                    <td>Budget Office</td>
-                    <td>2025-01-15</td>
-                    <td><span class="status-badge">For Signature Mayor</span></td>
+                    <td>{{ record.document_id }}</td>
+                    <td>{{ record.title }}</td>
+                    <td>{{ record.doc_type }}</td>
+                    <td>{{ record.department }}</td>
+                    <td>{{ record.date_in.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ record.released_by }}</td>
+                    <td>{{ record.received_by }}</td>
+                    <td>{{ record.status }}</td>
+                    <td class="action-icons">
+                        <a href="{{ url_for('main.view_document', id=record.id) }}"><i class="fas fa-eye" title="View"></i></a>
+                        <a href="{{ url_for('main.edit_document', id=record.id) }}"><i class="fas fa-edit" title="Edit"></i></a>
+                        <a href="{{ url_for('main.delete_document', id=record.id) }}"><i class="fas fa-trash" title="Delete"></i></a>
+                    </td>
                 </tr>
-                <tr>
-                    <td>DOC-2025-002</td>
-                    <td>Road Construction Bidding</td>
-                    <td>Engineering Office</td>
-                    <td>2025-01-18</td>
-                    <td><span class="status-badge">For Signature of BAC Members - BAC Office</span></td>
-                </tr>
-                <tr>
-                    <td>DOC-2025-003</td>
-                    <td>Diesel Reimbursement - Agriculture</td>
-                    <td>Agriculture Office</td>
-                    <td>2025-01-20</td>
-                    <td><span class="status-badge">For Accounting Staff Validation</span></td>
-                </tr>
-                <tr>
-                    <td>DOC-2025-004</td>
-                    <td>Medical Assistance - Patient A</td>
-                    <td>Municipal Health Office</td>
-                    <td>2025-01-22</td>
-                    <td><span class="status-badge">For Processing</span></td>
-                </tr>
-                <tr>
-                    <td>DOC-2025-005</td>
-                    <td>Campaign Tarpaulin Reimbursement</td>
-                    <td>Mayor Office</td>
-                    <td>2025-01-25</td>
-                    <td><span class="status-badge">Request for PR</span></td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div class="document-status-breakdown">
-        <h3>Document Status Breakdown</h3>
-        <div class="breakdown-grid">
-            <div class="breakdown-item"><p>For Signature Mayor</p><h2>2</h2></div>
-            <div class="breakdown-item"><p>Request for PR</p><h2>2</h2></div>
-            <div class="breakdown-item"><p>Request for PO</p><h2>1</h2></div>
-            <div class="breakdown-item"><p>Request for CBR</p><h2>1</h2></div>
-            <div class="breakdown-item"><p>For Signature of BAC Members - BAC Office</p><h2>2</h2></div>
-            <div class="breakdown-item"><p>For Accounting Staff Validation</p><h2>2</h2></div>
-            <div class="breakdown-item"><p>For Processing</p><h2>2</h2></div>
-            <div class="breakdown-item"><p>With Checked</p><h2>3</h2></div>
-        </div>
-    </div>
-</div>
+<script>
+// Toggle extra dropdown for In Progress
+function toggleExtraDropdown() {
+    const status = document.getElementById('filterStatus').value;
+    const extraDropdown = document.getElementById('filterExtraStatus');
+    if (status === 'inprogress') {
+        extraDropdown.style.display = 'inline-block';
+    } else {
+        extraDropdown.style.display = 'none';
+        extraDropdown.value = '';
+    }
+}
+
+function renderTable() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const deptValue = document.getElementById('filterDept').value.toLowerCase();
+    const statusValue = document.getElementById('filterStatus').value;
+    const extraStatusValue = document.getElementById('filterExtraStatus').value.toLowerCase();
+    const table = document.querySelector('.document-table tbody');
+    const rows = table.getElementsByTagName('tr');
+
+    const leftoverStatuses = [
+        'request for pr',
+        'request for po',
+        'request for obr',
+        'for signature bac members - bac office',
+        'for accounting staff validation',
+        'for processing'
+    ];
+
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        const title = cells[1].textContent.toLowerCase();
+        const dept = cells[3].textContent.toLowerCase();
+        const statusText = cells[7].textContent.toLowerCase();
+
+        let matchesStatus = true;
+
+        if (statusValue === 'pending') {
+            matchesStatus = statusText.includes('for signature mayor');
+        } else if (statusValue === 'completed') {
+            matchesStatus = statusText.includes('with checked');
+        } else if (statusValue === 'inprogress') {
+            matchesStatus = leftoverStatuses.some(s => statusText.includes(s));
+            if (extraStatusValue) {
+                matchesStatus = statusText.includes(extraStatusValue);
+            }
+        }
+
+        const matchesSearch = title.includes(searchValue) || cells[0].textContent.toLowerCase().includes(searchValue);
+        const matchesDept = !deptValue || dept === deptValue;
+
+        rows[i].style.display = (matchesSearch && matchesDept && matchesStatus) ? '' : 'none';
+    }
+}
+</script>
 {% endblock %}

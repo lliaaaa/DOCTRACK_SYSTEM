@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 <style>
     body {
         font-family: 'Poppins', sans-serif;
@@ -8,7 +11,7 @@
     }
 
     h1 {
-        color: #dea9a9;
+        color: #242121;
         font-size: 2.5rem;
         margin-top: 40px;
     }
@@ -28,7 +31,7 @@
 
     .card {
         width: 500px;
-        height: 600px;
+        height: 500px;
         border-radius: 20px;
         overflow: hidden;
         background-color: white;
@@ -50,17 +53,17 @@
         background: linear-gradient(135deg, #c82333, #e74c3c);
     }
 
-    .instructor-header {
-        background: linear-gradient(135deg, #8e2de2, #ff6fd8);
+    .client-header {
+        background: linear-gradient(135deg, #c82333, #e74c3c);
+    }
+
+    .card-header i {
+        font-size: 60px;
+        margin-bottom: 10px;
     }
 
     .card h2 {
         margin: 10px 0 0;
-    }
-
-    .card small {
-        font-size: 14px;
-        opacity: 0.9;
     }
 
     .card-content {
@@ -87,26 +90,22 @@
         width: 100%;
         margin: 25px auto;
         padding: 12px 0;
-        border: none;
         border-radius: 10px;
         font-weight: bold;
-        cursor: pointer;
         font-size: 15px;
+        text-decoration: none;
+        text-align: center;
         transition: 0.3s;
     }
 
     .btn-admin {
         background-color: #c82333;
         color: white;
-        text-decoration: none;
-        text-align: center;
     }
 
     .btn-client {
-        background: linear-gradient(135deg, #8e2de2, #ff6fd8);
+        background-color: #c82333;
         color: white;
-        text-decoration: none;
-        text-align: center;
     }
 
     .btn:hover {
@@ -114,18 +113,16 @@
         transform: scale(1.03);
     }
 </style>
-</head>
-<body>
 
 <h1>Access Portal</h1>
 <p>Select your role to access the system</p>
 
 <div class="container">
+
+    <!-- ADMIN CARD -->
     <div class="card">
         <div class="card-header admin-header">
-            <div>
-                <img style="height: 80px;width: 80px" src="../images/settings.png">
-            </div>
+            <i class="fas fa-shield-alt"></i>
             <h2>Administrator</h2>
         </div>
         <div class="card-content">
@@ -134,15 +131,15 @@
                 <li>Analytics & Reports</li>
                 <li>System Security</li>
             </ul>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
+            <a href="{{ url_for('auth.login', role='admin') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
         </div>
     </div>
+
+    <!-- CLIENT CARD -->
     <div class="card">
-        <div class="card-header instructor-header">
-            <div>
-                <img style="height: 80px;width: 80px" src="../images/customers.png">
-            </div>
-            <h2>Client</h2>
+        <div class="card-header client-header">
+            <i class="fas fa-users"></i>
+            <h2>Offices</h2>
         </div>
         <div class="card-content">
             <ul>
@@ -150,7 +147,9 @@
                 <li>Task Management</li>
                 <li>Communication Hub</li>
             </ul>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-client">ACCESS CLIENT PANEL</a>
+            <a href="{{ url_for('auth.login', role='office') }}" class="btn btn-client">ACCESS OFFICE PANEL</a>
         </div>
     </div>
+
 </div>
+{% endblock %}

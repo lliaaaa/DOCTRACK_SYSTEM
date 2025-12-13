@@ -1,6 +1,7 @@
 {% extends 'superadmin/index.html' %}
 {% block content %}
 <style>
+/* --- PAGE HEADER --- */
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -51,16 +52,19 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 15px;
+    align-items: stretch;
 }
 
 /* --- DEPARTMENT CARD --- */
 .dept-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
+    height: 200px;
+    padding: 10px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -93,11 +97,15 @@
     font-weight: 600;
     color: #2c3e50;
     margin-bottom: 2px;
+    white-space: normal; /* allow wrapping */
+    overflow: visible;
 }
 
 .dept-head {
     font-size: 12px;
     color: #7f8c8d;
+    white-space: normal;
+    overflow: visible;
 }
 
 /* Card Actions */
@@ -142,10 +150,12 @@
     border-top: 1px dashed #eee;
     font-size: 12px;
     color: #555;
+    overflow: hidden; /* prevent overflow but keep content visible */
 }
 
 .card-contact div {
     margin-bottom: 2px;
+    word-wrap: break-word; /* wrap long emails/contact */
 }
 
 .card-contact a {
@@ -175,70 +185,69 @@
 </style>
 
 <div class="page-header">
-    <div class="page-title">
-        <h2>Departments</h2>
-        <div class="small">Manage municipal departments and offices</div>
-    </div>
-    <div>
-        <button class="btn primary"><i class="fa fa-plus"></i>&nbsp; Add Department</button>
-    </div>
+    <div class="page-title">
+        <h2>Departments</h2>
+        <div class="small">Manage municipal departments and offices</div>
+    </div>
+    <div>
+        <button class="btn primary"><i class="fa fa-plus"></i>&nbsp; Add Department</button>
+    </div>
 </div>
 
 <div class="card-grid-container">
-    <div class="card-grid" id="deptGrid">
-            </div>
+    <div class="card-grid" id="deptGrid"></div>
 </div>
 
 <script>
 const departments = [
-    { id: 1, name: "ABC Office", head: "Head 1", employees: 18, documents: 0, contact: "(02) 8XXX-XXXX", email: "abc.office@gov.ph" },
-    { id: 2, name: "Accounting Office", head: "Head 2", employees: 13, documents: 1, contact: "(02) 8XXX-XXX1", email: "accounting.office@gov.ph" },
-    { id: 3, name: "Agriculture Office", head: "Head 3", employees: 17, documents: 1, contact: "(02) 8XXX-XXX2", email: "agriculture.office@gov.ph" },
-    { id: 4, name: "Assessor Office", head: "Head 4", employees: 14, documents: 1, contact: "(02) 8XXX-XXX3", email: "assessor.office@gov.ph" },
-    { id: 5, name: "Bids and Awards Committee", head: "Head 5", employees: 9, documents: 0, contact: "(02) 8XXX-XXX4", email: "bids.and.awards.committee@gov.ph" },
-    { id: 6, name: "Budget Office", head: "Head 6", employees: 22, documents: 1, contact: "(02) 8XXX-XXX5", email: "budget.office@gov.ph" },
-    { id: 7, name: "Civil Registrar Office", head: "Head 7", employees: 11, documents: 0, contact: "(02) 8XXX-XXX6", email: "civil.registrar.office@gov.ph" },
-    { id: 8, name: "COMELEC Office", head: "Head 8", employees: 5, documents: 0, contact: "(02) 8XXX-XXX7", email: "comelec.office@gov.ph" },
-    { id: 9, name: "Engineering Office", head: "Head 9", employees: 19, documents: 1, contact: "(02) 8XXX-XXX8", email: "engineering.office@gov.ph" },
-    { id: 10, name: "General Services Office", head: "Head 10", employees: 25, documents: 2, contact: "(02) 8XXX-XXX9", email: "general.services.office@gov.ph" },
+    { id: 1, name: "ABC Office", head: "Head 1", employees: 18, documents: 0, contact: "(02) 8XXX-XXXX", email: "abc.office@gov.ph" },
+    { id: 2, name: "Accounting Office", head: "Head 2", employees: 13, documents: 1, contact: "(02) 8XXX-XXX1", email: "accounting.office@gov.ph" },
+    { id: 3, name: "Agriculture Office", head: "Head 3", employees: 17, documents: 1, contact: "(02) 8XXX-XXX2", email: "agriculture.office@gov.ph" },
+    { id: 4, name: "Assessor Office", head: "Head 4", employees: 14, documents: 1, contact: "(02) 8XXX-XXX3", email: "assessor.office@gov.ph" },
+    { id: 5, name: "Bids and Awards Committee", head: "Head 5", employees: 9, documents: 0, contact: "(02) 8XXX-XXX4", email: "bids.and.awards.committee@gov.ph" },
+    { id: 6, name: "Budget Office", head: "Head 6", employees: 22, documents: 1, contact: "(02) 8XXX-XXX5", email: "budget.office@gov.ph" },
+    { id: 7, name: "Civil Registrar Office", head: "Head 7", employees: 11, documents: 0, contact: "(02) 8XXX-XXX6", email: "civil.registrar.office@gov.ph" },
+    { id: 8, name: "COMELEC Office", head: "Head 8", employees: 5, documents: 0, contact: "(02) 8XXX-XXX7", email: "comelec.office@gov.ph" },
+    { id: 9, name: "Engineering Office", head: "Head 9", employees: 19, documents: 1, contact: "(02) 8XXX-XXX8", email: "engineering.office@gov.ph" },
+    { id: 10, name: "General Services Office", head: "Head 10", employees: 25, documents: 2, contact: "(02) 8XXX-XXX9", email: "general.services.office@gov.ph" },
 ];
 
 function renderDepartments() {
-    const grid = document.getElementById("deptGrid");
-    grid.innerHTML = "";
+    const grid = document.getElementById("deptGrid");
+    grid.innerHTML = "";
 
-    departments.forEach(dept => {
-        const card = document.createElement("div");
-        card.className = "dept-card";
-        card.innerHTML = `
-            <div class="card-header">
-                <div class="dept-info">
-                    <div class="dept-icon"><i class="fa fa-folder-open"></i></div>
-                    <div class="dept-title">${dept.name}</div>
-                    <div class="dept-head">${dept.head}</div>
-                </div>
-                <div class="card-actions">
-                    <a href="#" title="Edit"><i class="fa fa-edit"></i></a>
-                    <a href="#" title="Delete" class="delete-icon"><i class="fa fa-trash"></i></a>
-                </div>
-            </div>
-            <div class="card-body">
-                <div>
-                    <span><i class="fa fa-users"></i> Employees</span>
-                    <span>${dept.employees}</span>
-                </div>
-                <div>
-                    <span><i class="fa fa-file-alt"></i> Documents</span>
-                    <span>${dept.documents}</span>
-                </div>
-            </div>
-            <div class="card-contact">
-                <div>Contact: ${dept.contact}</div>
-                <div>Email: <a href="mailto:${dept.email}">${dept.email}</a></div>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
+    departments.forEach(dept => {
+        const card = document.createElement("div");
+        card.className = "dept-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="dept-info">
+                    <div class="dept-icon"><i class="fa fa-folder-open"></i></div>
+                    <div class="dept-title">${dept.name}</div>
+                    <div class="dept-head">${dept.head}</div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" title="Edit"><i class="fa fa-edit"></i></a>
+                    <a href="#" title="Delete" class="delete-icon"><i class="fa fa-trash"></i></a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div>
+                    <span><i class="fa fa-users"></i> Employees</span>
+                    <span>${dept.employees}</span>
+                </div>
+                <div>
+                    <span><i class="fa fa-file-alt"></i> Documents</span>
+                    <span>${dept.documents}</span>
+                </div>
+            </div>
+            <div class="card-contact">
+                <div>Contact: ${dept.contact}</div>
+                <div>Email: <a href="mailto:${dept.email}">${dept.email}</a></div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 // Initial render

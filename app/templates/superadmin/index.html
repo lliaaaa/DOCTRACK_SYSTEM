@@ -1,8 +1,10 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SuperAdmin Panel</title>
+    <title>DTS Unisan - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +15,7 @@
         /* Sidebar */
         .sidebar {
             width: 250px;
-            background: #d60d0d;
+            background: #8f0707;
             height: 100vh;
             position: fixed;
             left: 0;
@@ -23,20 +25,14 @@
             color: white;
             overflow: hidden;
         }
+        .sidebar.collapsed { width: 70px; }
 
-        .sidebar.collapsed {
-            width: 70px;
-        }
+        .sidebar-header { text-align: center; margin-bottom: 20px; }
+        .sidebar-header h4 { margin: 0; }
+        .sidebar-header small { opacity: 0.7; }
 
-        .sidebar h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            transition: 0.3s;
-        }
-
-        .sidebar.collapsed h2 {
-            opacity: 0;
-        }
+        .menu-title { font-size: 12px; padding: 10px 20px; opacity: 0.7; }
+        .sidebar.collapsed .menu-title { display: none; }
 
         .sidebar a {
             display: flex;
@@ -48,27 +44,15 @@
             transition: 0.3s;
             white-space: nowrap;
         }
-
-        .sidebar a:hover {
-            background: #da1d1d;
-        }
-
-        .sidebar i {
-            font-size: 20px;
-        }
-
-        .sidebar span {
-            transition: 0.3s;
-        }
-
-        .sidebar.collapsed span {
-            opacity: 0;
-        }
+        .sidebar a:hover { background: #8e0000; }
+        .sidebar i { font-size: 20px; }
+        .sidebar.collapsed span { opacity: 0; }
 
         /* Header */
         .header {
             height: 60px;
-            background: white;
+            background: #b71c1c;
+            color: white;
             display: flex;
             align-items: center;
             padding: 0 20px;
@@ -76,89 +60,69 @@
             transition: 0.3s;
             box-shadow: 0 2px 4px #ccc;
         }
+        .header.collapsed { margin-left: 70px; }
+        .header h3 { margin: 0; }
 
-        .header.collapsed {
-            margin-left: 70px;
+        .logout-link {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
         }
+        .logout-link:hover { opacity: 0.8; }
 
         /* Main Content */
         .content {
-            padding: 0;
+            padding: 20px;
             margin-left: 250px;
             transition: 0.3s;
-            height: calc(100vh - 60px);
+            height: calc(100vh - 60px); /* header height */
+            overflow-y: auto; /* scroll inside content if needed */
+            box-sizing: border-box; /* include padding in height */
         }
 
-        .content.collapsed {
-            margin-left: 70px;
-        }
+        .content.collapsed { margin-left: 70px; }
 
-        /* Toggle Button */
-        .toggle-btn {
-            cursor: pointer;
-            margin-right: 15px;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .toggle-btn { cursor: pointer; margin-right: 15px; }
     </style>
-
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
+<!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-    <h2>Admin Portal</h2>
+    <div class="sidebar-header">
+        <h4>DTS - Unisan</h4>
+        <small>Admin Panel</small>
+    </div>
 
-    <a href="{{ url_for('main.superadmin_dashboard') }}">
-        <i class="fa fa-gauge"></i><span>Dashboard</span>
-    </a>
+    <p class="menu-title">DOCUMENT OPERATIONS</p>
+    <a href="{{ url_for('main.superadmin_dashboard') }}"><i class="fa fa-home"></i><span>Dashboard</span></a>
+    <a href="{{ url_for('main.add_record') }}"><i class="fa fa-add"></i><span>New Document</span></a>
+    <a href="{{ url_for('main.superadmin_documents') }}"><i class="fa fa-file"></i><span>All Documents</span></a>
+    <a href="{{ url_for('main.superadmin_trace') }}"><i class="fa fa-location-dot"></i><span>Trace</span></a>
+    <a href="#"><i class="fa fa-handshake"></i><span>Receive</span></a>
+    <a href="#"><i class="fa fa-rotate-left"></i><span>Retrieve</span></a>
 
-    <a href="{{ url_for('main.superadmin_documents') }}">
-        <i class="fa fa-file"></i><span>Documents</span>
-    </a>
-
-    <a href="{{ url_for('main.superadmin_tracking') }}">
-        <i class="fa fa-location-dot"></i><span>Tracking</span>
-    </a>
-
-    <a href="{{ url_for('main.superadmin_analytics') }}">
-        <i class="fa fa-chart-pie"></i><span>Analytics</span>
-    </a>
-
-    <a href="{{ url_for('main.superadmin_departments') }}">
-        <i class="fa fa-building"></i><span>Departments</span>
-    </a>
-
-    <a href="{{ url_for('main.superadmin_users') }}">
-        <i class="fa fa-users"></i><span>Users</span>
-    </a>
-
-    <a href="{{ url_for('main.superadmin_logs') }}">
-        <i class="fa fa-clock"></i><span>Logs</span>
-    </a>
-
-    <a href="{{ url_for('auth.logout') }}">
-        <i class="fa fa-sign-out"></i><span>Logout</span>
-    </a>
-</div><!--  -->
-
-<!-- HEADER -->
-<div class="header" id="header">
-    <i class="fa fa-bars toggle-btn" onclick="toggleSidebar()"></i>
-    <h3>Document Tracking System – SuperAdmin</h3>
+    <p class="menu-title">OFFICE MANAGEMENT</p>
+    <a href="{{ url_for('main.superadmin_analytics') }}"><i class="fa fa-chart-pie"></i><span>Analytics</span></a>
+    <a href="{{ url_for('main.superadmin_departments') }}"><i class="fa fa-building"></i><span>Departments</span></a>
+    <a href="{{ url_for('main.superadmin_users') }}"><i class="fa fa-users"></i><span>Staff Members</span></a>
 </div>
 
-<!-- MAIN CONTENT WITH IFRAME -->
+<!-- Header -->
+<div class="header" id="header">
+    <i class="fa fa-bars toggle-btn" onclick="toggleSidebar()"></i>
+    <h3>Document Tracking System – Admin</h3>
+    <a href="{{ url_for('auth.logout') }}" class="logout-link"><i class="fa fa-sign-out-alt"></i><span>Logout</span></a>
+</div>
+
+<!-- Main Content -->
 <div class="content">
     {% block content %}
+    <!-- Page-specific content will appear here -->
     {% endblock %}
 </div>
 
@@ -166,14 +130,7 @@
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("collapsed");
     document.getElementById("header").classList.toggle("collapsed");
-    document.getElementById("content").classList.toggle("collapsed");
-}
-
-function loadPage(page) {
-    document.getElementById("mainFrame").src = page;
-}
-function logout() {
-    alert("Logout Successful!")
+    document.querySelector(".content").classList.toggle("collapsed");
 }
 </script>
 

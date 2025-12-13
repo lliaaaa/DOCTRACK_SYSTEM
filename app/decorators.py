@@ -18,7 +18,7 @@ def role_required(*allowed_roles):
             print("SESSION ROLE:", role)
             if role not in allowed_roles:
                 flash("Access denied.", "danger")
-                return redirect(url_for("main.dashboard"))
+                return redirect(url_for("main.superadmin_dashboard"))
             return f(*args, **kwargs)
         return wrapper
     return decorator
