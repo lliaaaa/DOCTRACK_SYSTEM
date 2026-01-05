@@ -1,72 +1,37 @@
 {% extends 'admin/index.html' %}
 {% block content %}
-
 <style>
-/* Main content area */
-.content {
-    margin-left: 140px;
-    padding: 20px;
-    transition: 0.3s;
-    background: #f4f4f4;
-    font-family: 'Poppins', sans-serif;
-}
-.content.collapsed {
-    margin-left: 70px;
-}
-
-/* Dashboard title and greeting */
-h1.dashboard-title {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
 
 .greeting-text {
     margin-top: 0;
     margin-bottom: 25px;
     color: #6b7280;
 }
-
-/* Cards container */
 .card-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     margin-bottom: 30px;
 }
 
-/* Individual card style */
 .card {
     background: white;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    min-height: 120px;
+    gap: 10px;
     border-top: 5px solid transparent;
 }
 
-/* Card text */
-.card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 10px;
-}
-
-.card-number {
-    font-size: 28px;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-/* Card top border colors */
 .card.total { border-top-color: #0d6efd; }
-.card.pending { border-top-color: #ffc107; }
+.card.closed { border-top-color: #ffc107; }
 .card.completed { border-top-color: #198754; }
 .card.inprogress { border-top-color: #fd7e14; }
+
+.card h3 { margin: 0; font-size: 16px; color: #333; }
+.card h1 { margin: 0; font-size: 28px; color: #b71c1c; }
 
 /* Recent documents section */
 .recent-documents {
@@ -145,7 +110,7 @@ h1.dashboard-title {
     color: #1f2937;
 }
 </style>
-
+    
 <div class="content" id="content">
     <h1 class="dashboard-title">Dashboard</h1>
     <p class="greeting-text">Welcome to Admin Portal Dashboard</p>
@@ -156,21 +121,19 @@ h1.dashboard-title {
             <div class="card-title">Total Documents</div>
             <div class="card-number">{{ stats.total_documents }}</div>
         </div>
-
-        <div class="card pending">
-            <div class="card-title">Pending Documents</div>
-            <div class="card-number">{{ stats.pending }}</div>
-        </div>
-
-        <div class="card completed">
-            <div class="card-title">Completed Documents</div>
-            <div class="card-number">{{ stats.completed }}</div>
-        </div>
-
         <div class="card inprogress">
             <div class="card-title">In Process</div>
             <div class="card-number">{{ stats.in_process }}</div>
         </div>
+        <div class="card completed">
+            <div class="card-title">Completed Documents</div>
+            <div class="card-number">{{ stats.completed }}</div>
+        </div>
+        <div class="card closed">
+            <div class="card-title">Closed Documents</div>
+            <div class="card-number">{{ stats.closed }}</div>
+        </div>
+        
     </div>
 
     <!-- Recent Documents Table -->
