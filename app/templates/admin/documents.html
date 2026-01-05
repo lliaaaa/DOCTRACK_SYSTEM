@@ -1,4 +1,4 @@
-{% extends 'department/index.html' %}
+{% extends 'admin/index.html' %}
 {% block content %}
 <!-- ✅ BOOTSTRAP 5 CSS + JS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -41,6 +41,15 @@
 
 h1.dashboard-title { margin-bottom: 5px !important; font-size: 32px; }
 .greeting-text { margin-top: 0; margin-bottom: 20px; color: #777; }
+.close-icon {
+    font-size: 28px; /* size of the X */
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 </style>
 
 <div class="content" id="content">
@@ -72,15 +81,12 @@ h1.dashboard-title { margin-bottom: 5px !important; font-size: 32px; }
       <thead>
         <tr>
           <th>Doc Number</th><th>Title</th><th>Type</th><th>Date</th>
-          <th>Released By</th><th>Received By</th><th>Status</th>
+          <th>Released By</th><th>Received By</th><th>Status</th><th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for record in records %}
-        <tr data-doc-id="{{ record.id }}" data-doc-title="{{ record.title }}" data-doc-type="{{ record.doc_type }}"
-            data-date="{{ record.date_received.strftime('%Y-%m-%d') }}"
-            data-amount="{{ record.amount or '' }}" data-released="{{ record.released_by }}"
-            data-received="{{ record.received_by }}" data-status="{{ record.status }}">
+        <tr data-doc-id="{{ record.id }}" data-status="{{ record.status }}">
           <td>{{ record.document_id }}</td>
           <td>{{ record.title }}</td>
           <td>{{ record.doc_type }}</td>
@@ -88,6 +94,16 @@ h1.dashboard-title { margin-bottom: 5px !important; font-size: 32px; }
           <td>{{ record.released_by }}</td>
           <td>{{ record.received_by }}</td>
           <td>{{ record.status }}</td>
+          <td class="action-icons">
+              {% if record.status != 'Closed' %}
+              <button class="btn btn-link p-0 m-0 close-btn" data-id="{{ record.id }}" title="Close Document">
+                  <i class="fa fa-times close-icon text-danger"></i>
+              </button>
+              {% else %}
+              <span class="badge bg-secondary">Closed</span>
+              {% endif %}
+          </td>
+
         </tr>
         {% endfor %}
       </tbody>
@@ -96,52 +112,6 @@ h1.dashboard-title { margin-bottom: 5px !important; font-size: 32px; }
 </div>
 
 <script>
-let editModal;
-
-document.addEventListener('DOMContentLoaded', function() {
-    editModal = new bootstrap.Modal(document.getElementById('editDocumentModal'));
-
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const row = this.closest('tr');
-            document.getElementById('editDocId').value = row.dataset.docId || '';
-            document.getElementById('editTitle').value = row.dataset.docTitle || '';
-            document.getElementById('editDocType').value = row.dataset.docType || '';
-            document.getElementById('editDate').value = row.dataset.date || '';
-            document.getElementById('editAmount').value = row.dataset.amount || '';
-            document.getElementById('editReleased').value = row.dataset.released || '';
-            document.getElementById('editReceived').value = row.dataset.received || '';
-            document.getElementById('editStatus').value = row.dataset.status || '';
-            editModal.show();
-        });
-    });
-
-    document.getElementById('editDocumentForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const docId = document.getElementById('editDocId').value;
-
-        fetch(`/department/documents/${docId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(resp => resp.json())
-        .then(data => {
-            if(data.success){
-                editModal.hide();
-                setTimeout(() => location.reload(), 500);
-            } else {
-                alert(data.error || 'Error updating document');
-            }
-        })
-        .catch(err => { 
-            console.error(err); 
-            alert('Network error'); 
-        });
-    });
-});
-
 // Filters
 function toggleExtraDropdown() {
     const status = document.getElementById('filterStatus').value;
@@ -184,6 +154,49 @@ function renderTable() {
         row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
     }
 }
-</script>
 
+// Close document action
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const docId = this.dataset.id;
+
+            if(!confirm("Are you sure you want to close this document?")) return;
+
+            try {
+                const res = await fetch(`/documents/close/${docId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // Add 'X-CSRFToken': csrf_token if CSRF protection is enabled
+                    }
+                });
+
+                const data = await res.json();
+
+                if(data.success){
+                    // Replace action column with "Closed" badge
+                    const row = document.querySelector(`tr[data-doc-id="${docId}"]`);
+                    if(row){
+                        const actionCell = row.querySelector('td.action-icons');
+                        actionCell.innerHTML = '<span class="badge bg-secondary">Closed</span>';
+                        
+                        // Optional: also update status cell
+                        row.querySelector('td:nth-child(7)').textContent = 'Closed';
+                    }
+
+                    alert(data.message);
+                } else {
+                    alert(data.error || 'Failed to close document.');
+                }
+
+            } catch(err){
+                console.error(err);
+                alert('Network error. Could not close document.');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

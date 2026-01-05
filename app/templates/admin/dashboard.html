@@ -1,4 +1,4 @@
-{% extends 'superadmin/index.html' %}
+{% extends 'admin/index.html' %}
 {% block content %}
 
 <style>
@@ -168,8 +168,8 @@ h1.dashboard-title {
         </div>
 
         <div class="card inprogress">
-            <div class="card-title">Overdue / In Progress</div>
-            <div class="card-number">{{ stats.overdue }}</div>
+            <div class="card-title">In Process</div>
+            <div class="card-number">{{ stats.in_process }}</div>
         </div>
     </div>
 
@@ -187,21 +187,28 @@ h1.dashboard-title {
                 </tr>
             </thead>
             <tbody>
-                {% for record in records %}
-                    <tr>
-                        <td>{{ record.document_id }}</td>
-                        <td>{{ record.title }}</td>
-                        <td>{{ record.department }}</td>
-
-                        <td>
-                            <a href="{{ url_for('main.view_document', id=record.id) }}">
-                                <i class="fas fa-eye" title="View"></i>
-                            </a>
-                        </td>
-                    </tr>
+                {% if records %}
+                    {% for record in records %}
+                        <tr>
+                            <td>{{ record.document_id }}</td>
+                            <td>{{ record.title }}</td>
+                            <td>{{ record.department }}</td>
+                            <td>{{ record.date_received.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <span class="status-badge">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                        </tr>
                     {% endfor %}
-
+                {% else %}
+                    <tr>
+                        <td colspan="5">No recent documents found.</td>
+                    </tr>
+                {% endif %}
             </tbody>
+
+
         </table>
     </div>
 

@@ -1,24 +1,18 @@
 from functools import wraps
-from flask import session, redirect, url_for, flash
+from flask import redirect, url_for, flash
+from flask_login import current_user
 
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user_id" not in session:
-            flash("You must log in first.", "warning")
-            return redirect(url_for("auth.login"))
-        return f(*args, **kwargs)
-    return wrapper
-
-def role_required(*allowed_roles):
+def role_required(role):
     def decorator(f):
         @wraps(f)
-        def wrapper(*args, **kwargs):
-            role = session.get("role")
-            print("SESSION ROLE:", role)
-            if role not in allowed_roles:
-                flash("Access denied.", "danger")
-                return redirect(url_for("main.superadmin_dashboard"))
+        def wrapped(*args, **kwargs):
+            if not current_user.is_authenticated:
+                # Let Flask-Login handle redirect to login
+                return current_user  # do nothing, login_required will redirect
+            if current_user.role != role:
+                flash("You are not authorized to access this page.", "danger")
+                # Redirect to a safe page that does NOT require this role
+                return redirect(url_for("main.home"))  
             return f(*args, **kwargs)
-        return wrapper
+        return wrapped
     return decorator

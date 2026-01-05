@@ -127,15 +127,15 @@
         </div>
         <div class="card-content">
             <ul>
-                <li>User Management</li>
-                <li>Analytics & Reports</li>
-                <li>System Security</li>
+                <li>Manage users and roles</li>
+                <li>View system analytics and generate reports</li>
+                <li>Oversee system security and configurations</li>
             </ul>
             <a href="{{ url_for('auth.login', role='admin') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
         </div>
     </div>
 
-    <!-- CLIENT CARD -->
+    <!-- CLIENT/Office CARD -->
     <div class="card">
         <div class="card-header client-header">
             <i class="fas fa-users"></i>
@@ -143,9 +143,9 @@
         </div>
         <div class="card-content">
             <ul>
-                <li>Student Monitoring</li>
-                <li>Task Management</li>
-                <li>Communication Hub</li>
+                <li>Track document activities</li>
+                <li>Manage daily tasks and workflows</li>
+                <li>Communicate with other departments</li>
             </ul>
             <a href="{{ url_for('auth.login', role='office') }}" class="btn btn-client">ACCESS OFFICE PANEL</a>
         </div>

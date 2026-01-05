@@ -1,18 +1,24 @@
 from datetime import datetime
 import uuid
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
+
+    full_name = db.Column(db.String(150), nullable=False)  # ✅ NEW
+
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+
+    department = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), default="user", nullable=False)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def set_password(self, password: str):
@@ -21,39 +27,57 @@ class User(db.Model):
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
 
+
     def get_id(self):
         return str(self.id)
 
-
+class DocumentType(db.Model):
+    __tablename__ = 'document_type'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+class DocumentStatus(db.Model):
+    __tablename__ = 'document_status'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
 class Record(db.Model):
-    __tablename__ = "records"
+    __tablename__ = 'records'
 
     id = db.Column(db.Integer, primary_key=True)
-
-    # ✅ RANDOM DOCUMENT ID (public)
-    document_id = db.Column(
-        db.String(32),
-        unique=True,
-        nullable=False,
-        default=lambda: uuid.uuid4().hex.upper()
-    )
-
-    title = db.Column(db.String(200), nullable=False)
-    doc_type = db.Column(db.String(100), nullable=False)
+    document_id = db.Column(db.String(50), unique=True, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    doc_type = db.Column(db.String(50), nullable=False)
     department = db.Column(db.String(100), nullable=False)
-    date_in = db.Column(db.Date, nullable=False)
-    amount = db.Column(db.Float, nullable=True)
-    released_by = db.Column(db.String(100), nullable=False)
-    received_by = db.Column(db.String(100), nullable=False)
-    status = db.Column(db.String(50), nullable=False)
-    remarks = db.Column(db.Text, nullable=True)
 
+    implementing_office = db.Column(db.String(100), nullable=True)  # ✅ MUST EXIST
+
+    date_received = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Float, nullable=True)
+    released_by = db.Column(db.String(100), nullable=True)
+    received_by = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    history = db.relationship(
+        'RecordHistory',
+        back_populates='record',
+        order_by='RecordHistory.timestamp'
     )
+
+class RecordHistory(db.Model):
+    __tablename__ = 'record_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    record_id = db.Column(db.Integer, db.ForeignKey('records.id'), nullable=False)
+    action_type = db.Column(db.String(20), nullable=False)  # 'transfer' or 'receive'
+    status = db.Column(db.String(100), nullable=False)      # status after the action
+    from_department = db.Column(db.String(100), nullable=True)
+    to_department = db.Column(db.String(100), nullable=True)
+    action_by = db.Column(db.String(100), nullable=True)    # user performing the action
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    record = db.relationship('Record', back_populates='history')
+
 class Department(db.Model):
     __tablename__ = "departments"
 
@@ -71,6 +95,7 @@ class Department(db.Model):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+
 
     def __str__(self):
         return self.name

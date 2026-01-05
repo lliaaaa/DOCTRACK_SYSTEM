@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>DTS Unisan - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -97,19 +99,14 @@
         <h4>DTS - Unisan</h4>
         <small>Admin Panel</small>
     </div>
-
+        <a href="{{ url_for('main.admin_dashboard') }}"><i class="fa fa-home"></i><span>Dashboard</span></a>
     <p class="menu-title">DOCUMENT OPERATIONS</p>
-    <a href="{{ url_for('main.superadmin_dashboard') }}"><i class="fa fa-home"></i><span>Dashboard</span></a>
-    <a href="{{ url_for('main.add_record') }}"><i class="fa fa-add"></i><span>New Document</span></a>
-    <a href="{{ url_for('main.superadmin_documents') }}"><i class="fa fa-file"></i><span>All Documents</span></a>
-    <a href="{{ url_for('main.superadmin_trace') }}"><i class="fa fa-location-dot"></i><span>Trace</span></a>
-    <a href="#"><i class="fa fa-handshake"></i><span>Receive</span></a>
-    <a href="#"><i class="fa fa-rotate-left"></i><span>Retrieve</span></a>
-
+    <a href="{{ url_for('main.add_document') }}"><i class="fa fa-add"></i><span>New Document</span></a>
+    <a href="{{ url_for('main.admin_documents') }}"><i class="fa fa-file"></i><span>All Documents</span></a>
+    <a href="{{ url_for('main.admin_trace') }}"><i class="fa fa-location-dot"></i><span>Trace</span></a>
     <p class="menu-title">OFFICE MANAGEMENT</p>
-    <a href="{{ url_for('main.superadmin_analytics') }}"><i class="fa fa-chart-pie"></i><span>Analytics</span></a>
-    <a href="{{ url_for('main.superadmin_departments') }}"><i class="fa fa-building"></i><span>Departments</span></a>
-    <a href="{{ url_for('main.superadmin_users') }}"><i class="fa fa-users"></i><span>Staff Members</span></a>
+    <a href="{{ url_for('main.admin_departments') }}"><i class="fa fa-building"></i><span>Departments</span></a>
+    <a href="{{ url_for('main.admin_users') }}"><i class="fa fa-users"></i><span>Staff Members</span></a>
 </div>
 
 <!-- Header -->
@@ -132,6 +129,7 @@ function toggleSidebar() {
     document.getElementById("header").classList.toggle("collapsed");
     document.querySelector(".content").classList.toggle("collapsed");
 }
+
 </script>
 
 </body>

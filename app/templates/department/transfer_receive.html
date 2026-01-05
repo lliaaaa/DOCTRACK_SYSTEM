@@ -1,0 +1,287 @@
+{% extends 'department/index.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+/* --- CONTENT --- */
+.content {
+    margin-left: 140px;
+    padding: 20px;
+    transition: 0.3s;
+    background: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+.content.collapsed { margin-left: 70px; }
+
+/* --- TABLE --- */
+.table-striped th, .table-striped td { vertical-align: middle; }
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    background-color: #ffc10740;
+    border: 1px solid #ffc107;
+}
+
+/* --- NOTIFICATION BELL --- */
+#notificationBell {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    cursor: pointer;
+    font-size: 24px;
+    color: #007bff;
+}
+#notificationCount {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+}
+
+/* --- NOTIFICATION MODAL --- */
+.notification-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.notification-item:last-child { border-bottom: none; }
+.notification-item button {
+    float: right;
+}
+
+/* --- MODALS --- */
+.modal-body label { font-weight: 600; }
+</style>
+
+<div class="content">
+    <h1 class="dashboard-title">Transfer & Receive Documents</h1>
+    <p>Only show documents your department can transfer. Incoming transfers appear in the notification bell.</p>
+
+    <!-- DOCUMENTS TABLE -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Doc Number</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Current Office</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr data-doc-id="{{ record.id }}">
+                <td>{{ record.document_id }}</td>
+                <td>{{ record.title }}</td>
+                <td>{{ record.doc_type }}</td>
+                <td class="current-office">{{ record.department }}</td>
+                <td class="status">{{ record.status }}</td>
+                <td>
+                    {% if record.status != 'Closed' %}
+                        <button class="btn btn-primary btn-sm transfer-btn" data-doc-id="{{ record.id }}" data-bs-toggle="modal" data-bs-target="#transferModal">Transfer</button>
+                    {% else %}
+                        <span class="badge bg-secondary">Closed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Notification Bell -->
+<div id="notificationBell" data-bs-toggle="modal" data-bs-target="#notificationModal">
+    <i class="bi bi-bell-fill"></i>
+    <div id="notificationCount">{{ incoming_transfers|length }}</div>
+</div>
+<div class="modal fade" id="transferModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transfer Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label>Select Department to Transfer:</label>
+                <select class="form-select" id="transferDept">
+                    <option value="" selected disabled>Select Department</option>
+                    {% for dept in departments %}
+                        {% if dept.name != current_user.department %}
+                            <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <label class="mt-3">Select Next Status:</label>
+                <select class="form-select" id="transferStatus">
+                    <option value="" selected disabled>Select Status</option>
+                    <option>For Signature Mayor</option>
+                    <option>Request for PR</option>
+                    <option>Request for PO</option>
+                    <option>Request for OBR</option>
+                    <option>For Signature BAC Members - BAC Office</option>
+                    <option>For Accounting Staff Validation</option>
+                    <option>For Processing</option>
+                    <option>With Checked</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" id="confirmTransferBtn">Transfer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NOTIFICATION MODAL -->
+<div class="modal fade" id="notificationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Incoming Transfers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if incoming_transfers %}
+                    {% for inc in incoming_transfers %}
+                    <div class="notification-item" data-history-id="{{ inc.id }}">
+                        <strong>{{ inc.record.document_id }}</strong> - {{ inc.record.title }}<br>
+                        From: {{ inc.from_department }} → To: {{ inc.to_department }}<br>
+                        Status: {{ inc.status }}
+                        <button class="btn btn-success btn-sm receive-btn float-end" data-history-id="{{ inc.id }}">Confirm</button>
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <p>No incoming transfers.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentDocId = null;
+
+    // --- Transfer Button ---
+    document.querySelectorAll('.transfer-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentDocId = btn.dataset.docId;
+
+            // Reset modal selects
+            document.getElementById('transferDept').value = "";
+            document.getElementById('transferStatus').value = "";
+        });
+    });
+
+    document.getElementById('confirmTransferBtn').addEventListener('click', async () => {
+        const toDept = document.getElementById('transferDept').value;
+        const newStatus = document.getElementById('transferStatus').value;
+
+        if(!toDept || !newStatus) { alert("Select department and status."); return; }
+        if(!confirm(`Transfer document to ${toDept}?`)) return;
+
+        try {
+            const res = await fetch(`/documents/transfer/${currentDocId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({to_department: toDept, status: newStatus})
+            });
+            const data = await res.json();
+            if(data.success){
+                const row = document.querySelector(`tr[data-doc-id="${currentDocId}"]`);
+                row.querySelector('.status').textContent = newStatus;
+                alert(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
+            } else { alert(data.error); }
+        } catch(err){ console.error(err); alert("Transfer failed."); }
+    });
+
+    // --- Receive Buttons ---
+    function setupReceiveButtons() {
+        document.querySelectorAll('.receive-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const docId = btn.dataset.docId;
+                if(!confirm("Confirm receipt of this document?")) return;
+
+                try {
+                    const res = await fetch(`/documents/receive/${docId}`, { method:'POST' });
+                    const data = await res.json();
+                    if(data.success){
+                        // Remove notification
+                        const notif = document.querySelector(`.notification-item[data-doc-id="${docId}"]`);
+                        if(notif) notif.remove();
+
+                        // Update main table if exists
+                        const row = document.querySelector(`tr[data-doc-id="${docId}"]`);
+                        if(row){
+                            row.querySelector('.current-office').textContent = data.new_department;
+                            row.querySelector('.status').textContent = data.status;
+                        }
+
+                        // Update notification count
+                        const countElem = document.getElementById('notificationCount');
+                        let count = parseInt(countElem.textContent);
+                        countElem.textContent = Math.max(count - 1, 0);
+
+                        alert(data.message);
+                    } else { alert(data.error); }
+                } catch(err){ console.error(err); alert("Failed to receive document."); }
+            }
+        });
+    }
+
+    setupReceiveButtons();
+});
+
+    document.querySelectorAll('.receive-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const historyId = btn.dataset.historyId;
+        if(!confirm("Confirm receipt of this document?")) return;
+
+        try {
+            const res = await fetch(`/documents/receive/${historyId}`, { method:'POST' });
+            const data = await res.json();
+
+            if(data.success){
+                // Remove notification
+                const notif = document.querySelector(`.notification-item[data-history-id="${historyId}"]`);
+                if(notif) notif.remove();
+
+                // Update main table
+                const row = document.querySelector(`tr[data-doc-id="${data.record_id}"]`);
+                if(row){
+                    row.querySelector('.current-office').textContent = data.new_department;
+                    row.querySelector('.status').textContent = data.status;
+                }
+
+                // Update badge count
+                const badge = document.getElementById('notificationCount');
+                let count = parseInt(badge.textContent) - 1;
+                badge.textContent = count > 0 ? count : '';
+
+                alert(data.message);
+            } else {
+                alert(data.error);
+            }
+        } catch(err){
+            console.error(err);
+            alert("Failed to receive document.");
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,47 +1,71 @@
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from .models import User
+from flask_login import login_user, logout_user, login_required, current_user
+
 from . import db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
-
-
 @bp.route("/login", methods=["GET", "POST"])
 def login():
-    # Get role from URL parameter (GET) or form hidden input (POST)
-    role = request.args.get("role") or request.form.get("role") or "office"
-
     if request.method == "POST":
-        email = request.form["email"].lower()
+        email = request.form["email"].lower().strip()
         password = request.form["password"]
 
         user = User.query.filter_by(email=email).first()
 
-        # Check login
-        if user and user.check_password(password):
-            if user.role != role:
-                flash(f"You are not authorized for {role} login.", "danger")
-                return redirect(url_for("auth.login", role=role))
+        if not user:
+            flash("No account found with this email.", "danger")
+            return redirect(url_for("auth.login"))
 
-            # Save session
-            session["user_id"] = user.id
-            session["role"] = user.role
+        if not user.check_password(password):
+            flash("Incorrect password.", "danger")
+            return redirect(url_for("auth.login"))
 
-            # Redirect based on role
-            if user.role == "admin":
-                return redirect(url_for("main.superadmin_home"))
-            else:
-                return redirect(url_for("main.department_home"))
+        # ✅ Login successful
+        login_user(user)
 
-        flash("Invalid email or password", "danger")
-        return redirect(url_for("auth.login", role=role))
+        # Redirect based on role
+        if user.role.lower() == "admin":
+            return redirect(url_for("main.admin_home"))
+        else:
+            return redirect(url_for("main.department_home"))
 
-    # GET request
-    return render_template("login.html", role=role)
+    return render_template("login.html")
 
+
+@bp.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    current_password = request.form.get("current_password")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+
+    # 🔒 Validate current password
+    if not current_user.check_password(current_password):
+        flash("Current password is incorrect.", "danger")
+        return redirect(request.referrer)
+
+    # 🔒 Validate new password match
+    if new_password != confirm_password:
+        flash("New passwords do not match.", "warning")
+        return redirect(request.referrer)
+
+    # 🔒 Optional: minimum length
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters long.", "warning")
+        return redirect(request.referrer)
+
+    # ✅ Update password
+    current_user.set_password(new_password)
+    db.session.commit()
+
+    flash("Password updated successfully.", "success")
+    return redirect(request.referrer)
 
 @bp.route("/logout")
+@login_required
 def logout():
-    session.clear()
+    logout_user()
     flash("Logged out successfully.", "info")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("main.home"))

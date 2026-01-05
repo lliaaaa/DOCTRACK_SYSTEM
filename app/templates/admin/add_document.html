@@ -1,0 +1,167 @@
+{% extends "admin/index.html" %}
+{% block content %}
+
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f3f4f6;
+        margin: 0;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+
+    h2 {
+        text-align: center;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 30px;
+    }
+
+    /* Form styling */
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        height: 45px;
+        padding: 8px 12px;
+        transition: all 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+
+    textarea.form-control {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .btn-submit {
+        background-color: #9c0b19;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 12px 0;
+        font-size: 16px;
+        transition: background-color 0.2s;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+        background-color: #4338ca;
+    }
+
+    .mb-3 {
+        margin-bottom: 15px !important;
+    }
+
+    /* Two-column layout */
+    .row-cols {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .row-cols .col-half {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 200px;
+    }
+</style>
+
+<div class="container">
+    <h2>Add New Document</h2>
+    <form method="POST">
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title" required placeholder="Enter document title">
+        </div>
+
+        <div class="row-cols">
+            <div class="col-half mb-3">
+                <label for="doc_type" class="form-label">Document Type</label>
+                <select class="form-select" id="doc_type" name="doc_type" required>
+                    <option value="" selected disabled>Select Type</option>
+                    {% for dt in document_type %}
+                    <option value="{{ dt.name }}">{{ dt.name }}</option>
+                    {% endfor %}
+                </select>
+
+            </div>
+
+            <div class="col-half mb-3">
+                <label for="implementing_office" class="form-label">Implementing Office</label>
+                <select class="form-select" id="implementing_office" name="implementing_office" required>
+                    <option value="" selected disabled>Select Office</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.name }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row-cols">
+            <div class="col-half mb-3">
+                <label for="date_received" class="form-label">Date Received</label>
+                <input type="date" class="form-control" id="date_received" name="date_received" required>
+            </div>
+
+            <div class="col-half mb-3">
+                <label for="amount" class="form-label">Amount (Optional)</label>
+                <input type="number" class="form-control" id="amount" name="amount" placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="row-cols">
+            <div class="col-half mb-3">
+                <label for="released_by" class="form-label">Released By</label>
+                <select class="form-select" id="released_by" name="released_by" required>
+                    <option value="" selected disabled>Select Employee</option>
+                    {% for user in users %}
+                        <option value="{{ user.full_name }}">{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-half mb-3">
+                <label for="received_by" class="form-label">Received By</label>
+                <select class="form-select" id="received_by" name="received_by" required>
+                    <option value="" selected disabled>Select Employee</option>
+                    {% for user in users %}
+                        <option value="{{ user.full_name }}">{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required>
+                <option value="" selected disabled>Select Status</option>
+                {% for stat in status %}
+                <option value="{{ stat.name }}">{{ stat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+
+        <button type="submit" class="btn-submit">Add Document</button>
+    </form>
+</div>
+
+{% endblock %}

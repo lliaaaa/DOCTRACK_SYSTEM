@@ -1,0 +1,166 @@
+{% extends 'admin/index.html' %}
+{% block content %}
+
+<style>
+/* --- General Styles --- */
+.page-header {
+    padding: 0;  /* remove padding that caused the box */
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    background: none; /* remove background color */
+    border-bottom: none; /* remove border */
+}
+
+.page-title h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* --- SEARCH BAR --- */
+.search-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-container input { padding: 8px 12px; width: 250px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
+.search-container button { padding: 8px 16px; border: none; background-color: #007bff; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.search-container button:hover { background-color: #0056b3; }
+
+/* --- DOCUMENT INFO --- */
+.doc-info, .tracking-history, .table-wrapper { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+
+.doc-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 20px; font-size: 13px; }
+.info-item div:first-child { font-size: 11px; color: #7f8c8d; font-weight: 500; text-transform: uppercase; }
+.info-item div:last-child { font-weight: 600; color: #34495e; }
+
+/* --- TRACKING HISTORY --- */
+.timeline { position: relative; padding-left: 20px; margin-left: 10px; }
+.timeline::before { content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%; background: #e0e0e0; }
+.timeline-item { position: relative; margin-bottom: 15px; padding-left: 18px; }
+.timeline-item .circle { position: absolute; top: 0; left: -3px; width: 10px; height: 10px; border-radius: 50%; background: #dc3545; border: 2px solid #fff; }
+.timeline-item.completed .circle { background: #198754; }
+.timeline-item.pending .circle { background: #ffc107; }
+.timeline-content { display: flex; justify-content: space-between; align-items: flex-start; font-size: 13px; }
+.timeline-info { flex-grow: 1; }
+.timeline-title { font-weight: 600; color: #2c3e50; margin-bottom: 2px; }
+.timeline-details { color: #555; font-size: 12px; }
+.timeline-date { color: #7f8c8d; font-size: 11px; white-space: nowrap; }
+
+/* --- TABLE --- */
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+th, td { padding: 10px 12px; font-size: 13px; color: #34495e; border-bottom: 1px solid #f0f0f0; text-align: center; }
+th { background-color: #ecf0f1; font-weight: 600; color: #2c3e50; text-transform: uppercase; font-size: 12px; }
+tr:nth-child(odd) { background-color: #fcfcfc; }
+tr:hover { background-color: #f1f1f1; cursor:pointer; }
+
+.status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; display: inline-block; text-align: center; }
+.s-mayor { background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+.s-bac { background-color: #cff4fc; color: #055160; border: 1px solid #cff4fc; }
+.s-accounting { background-color: #d1e7dd; color: #0f5132; border: 1px solid #d1e7dd; }
+.s-processing { background-color: #f8d7da; color: #842029; border: 1px solid #f8d7da; }
+.s-pr { background-color: #cfe2ff; color: #084298; border: 1px solid #cfe2ff; }
+
+@media (max-width: 768px) { .doc-info-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page-header">
+    <div class="page-title">
+        <h1>Trace Documents</h1>
+    </div>
+</div>
+
+<div class="all-docs-section">
+    <form class="search-container" method="GET" action="{{ url_for('main.admin_trace') }}">
+        <input type="text" name="q" placeholder="Enter keyword or Document ID" value="{{ request.args.get('q', '') }}">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if request.args.get('q') %}
+        {% if documents %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document ID</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Implementing Office</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td>{{ doc.document_id }}</td>
+                            <td>{{ doc.title }}</td>
+                            <td>{{ doc.doc_type }}</td>
+                            <td>{{ doc.department }}</td>
+                            <td><span class="status-badge s-{{ doc.department|lower }}">{{ doc.status }}</span></td>
+                            <td>{{ doc.updated_at.strftime('%Y-%m-%d %H:%M') if doc.updated_at and doc.updated_at is not string else '-' }}</td>
+                            <td><a href="{{ url_for('main.admin_trace', q=doc.document_id) }}">Trace</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No documents matched your search.</p>
+        {% endif %}
+
+        {% if tracked_doc %}
+        <div class="doc-info">
+            <h3>Document Details</h3>
+            <div class="doc-info-grid">
+                <div class="info-item"><div>Released By</div><div>{{ tracked_doc.released_by }}</div></div>
+                <div class="info-item"><div>Received By</div><div>{{ tracked_doc.received_by }}</div></div>
+                <div class="info-item"><div>Date Received</div>
+                    <div>
+                        {% if tracked_doc.date_received and tracked_doc.date_received is not string %}
+                            {{ tracked_doc.date_received.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            {{ tracked_doc.date_received }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tracking-history">
+            <h3>Tracking History</h3>
+            {% if tracked_doc.history %}
+                <div class="timeline">
+                    {% for h in tracked_doc.history %}
+                    <div class="timeline-item {% if 'Completed' in h.status %}completed{% elif 'For' in h.status %}pending{% endif %}">
+                        <div class="circle"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-info">
+                                <div class="timeline-title">{{ h.status }}</div>
+                                <div class="timeline-details">
+                                    {% if h.from_department %}From: {{ h.from_department }}<br>{% endif %}
+                                    {% if h.to_department %}To: {{ h.to_department }}<br>{% endif %}
+                                    {% if h.action_by %}Action By: {{ h.action_by }}{% endif %}
+                                </div>
+                            </div>
+                            <div class="timeline-date">
+                                {% if h.timestamp and h.timestamp is not string %}
+                                    {{ h.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    {{ h.timestamp }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No tracking history available.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <p>Content not available. Please search or select a document.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
