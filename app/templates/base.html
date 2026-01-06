@@ -77,13 +77,6 @@
     </div>
   </header>
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for msg in messages %}
-                <div class="alert alert-success">{{ msg }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
     {% block content %}{% endblock %}
 </div>
 </body>

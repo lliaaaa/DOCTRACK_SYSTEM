@@ -33,32 +33,37 @@ def admin_home():
 @login_required
 @role_required("admin")
 def admin_dashboard():
-    # --- STATUS LOGIC (based on your rules) ---
-    pending_status = "For Signature Mayor"
+    closed_status = "Closed"
     completed_status = "With Checked"
+    in_process_statuses = [
+        "Request for PR",
+        "Request for PO",
+        "Request for OBR",
+        "For Signature BAC Members - BAC Office",
+        "For Accounting Staff Validation",
+        "For Processing"
+    ]
 
+    # --- Total documents ---
     total_documents = Record.query.count()
 
-    pending = Record.query.filter(
-        Record.status == pending_status
-    ).count()
+    # --- Closed documents ---
+    closed = Record.query.filter(Record.status == closed_status).count()
 
-    completed = Record.query.filter(
-        Record.status == completed_status
-    ).count()
+    # --- Completed documents ---
+    completed = Record.query.filter(Record.status == completed_status).count()
 
-    in_process = Record.query.filter(
-        Record.status.notin_([pending_status, completed_status])
-    ).count()
+    # --- In process documents ---
+    in_process = Record.query.filter(Record.status.in_(in_process_statuses)).count()
 
     stats = {
         "total_documents": total_documents,
-        "pending": pending,
+        "closed": closed,
         "completed": completed,
         "in_process": in_process
     }
 
-    # --- STATUS BREAKDOWN ---
+    # --- STATUS BREAKDOWN for chart ---
     status_data = (
         db.session.query(
             Record.status,
@@ -68,9 +73,7 @@ def admin_dashboard():
         .all()
     )
 
-    charts_combined = status_data
-
-    # --- RECENT DOCUMENTS (FIXED) ---
+    # --- Recent Documents (latest 5) ---
     records = (
         Record.query
         .order_by(Record.created_at.desc())
@@ -81,7 +84,7 @@ def admin_dashboard():
     return render_template(
         "admin/dashboard.html",
         stats=stats,
-        charts_combined=charts_combined,
+        charts_combined=status_data,
         records=records
     )
 
@@ -157,107 +160,6 @@ def ajax_add_department():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@bp.route("/admin/departments/<int:id>", methods=["PUT"])
-@login_required
-@role_required("admin")
-def ajax_edit_department(id):
-    try:
-        dept = Department.query.get_or_404(id)
-        data = request.get_json()
-        
-        dept.name = data['name']
-        dept.head = data.get('head', '')
-        dept.employees = int(data.get('employees', 0))
-        dept.contact = data.get('contact', '')
-        dept.email = data.get('email', '')
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Department updated successfully!',
-            'department': {
-                'id': dept.id,
-                'name': dept.name,
-                'head': dept.head,
-                'employees': dept.employees,
-                'contact': dept.contact or '',
-                'email': dept.email or ''
-            }
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@bp.route("/admin/departments/<int:id>", methods=["DELETE"])
-@login_required
-@role_required("admin")
-def ajax_delete_department(id):
-    try:
-        dept = Department.query.get_or_404(id)
-        name = dept.name
-        
-        db.session.delete(dept)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Department "{name}" deleted successfully!'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-# -------------------------------
-# OLD FORM ROUTES (BACKWARD COMPATIBLE)
-# -------------------------------
-@bp.route("/admin/departments/add", methods=["POST"])
-@login_required
-@role_required("admin")
-def add_department():
-    dept = Department(
-        name=request.form["name"],
-        head=request.form["head"],
-        employees=request.form.get("employees", 0),
-        contact=request.form.get("contact"),
-        email=request.form.get("email")
-    )
-
-    db.session.add(dept)
-    db.session.commit()
-
-    flash("Department added successfully!", "success")
-    return redirect(url_for("main.admin_departments"))
-
-@bp.route("/admin/departments/edit/<int:id>", methods=["POST"])
-@login_required
-@role_required("admin")
-def edit_department(id):
-    dept = Department.query.get_or_404(id)
-
-    dept.name = request.form["name"]
-    dept.head = request.form["head"]
-    dept.employees = request.form.get("employees", 0)
-    dept.contact = request.form.get("contact")
-    dept.email = request.form.get("email")
-
-    db.session.commit()
-
-    flash("Department updated successfully!", "success")
-    return redirect(url_for("main.admin_departments"))
-
-@bp.route("/admin/departments/delete/<int:id>")
-@login_required
-@role_required("admin")
-def delete_department(id):
-    dept = Department.query.get_or_404(id)
-
-    db.session.delete(dept)
-    db.session.commit()
-
-    flash("Department deleted successfully!", "success")
-    return redirect(url_for("main.admin_departments"))
-
 @bp.route("/admin/users")
 @login_required
 @role_required("admin")
@@ -266,8 +168,7 @@ def admin_users():
     departments = Department.query.order_by(Department.name).all()
     return render_template("admin/users.html", users=users, departments=departments)
 
-
-# Add new user
+# Add new user (same as before)
 @bp.route("/admin/users/add", methods=["POST"])
 @login_required
 @role_required("admin")
@@ -278,17 +179,14 @@ def add_user():
     role = request.form.get("role") or "user"
     department = request.form.get("department")
 
-    # Validate required fields
     if not full_name or not email or not password:
         flash("Full name, email, and password are required.", "danger")
         return redirect(url_for("main.admin_users"))
 
-    # Check for duplicate email
     if User.query.filter_by(email=email).first():
         flash("User with this email already exists.", "warning")
         return redirect(url_for("main.admin_users"))
 
-    # Create new user
     user = User(
         full_name=full_name,
         email=email,
@@ -303,51 +201,60 @@ def add_user():
     return redirect(url_for("main.admin_users"))
 
 
-# Edit existing user
+# Edit existing user (no password change, admins protected)
 @bp.route("/admin/users/edit/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def edit_user(id):
     user = User.query.get_or_404(id)
 
-    full_name = request.form.get("full_name")
-    email = request.form.get("email")
-    password = request.form.get("password")
-    role = request.form.get("role") or "user"
-    department = request.form.get("department")
-
-    # Validate required fields
-    if not full_name or not email:
-        flash("Full name and email are required.", "danger")
+    # Prevent editing other admins
+    if user.role == "admin":
+        flash("Cannot edit other admin accounts.", "danger")
         return redirect(url_for("main.admin_users"))
 
-    # Update user info
-    user.full_name = full_name
-    user.email = email
-    user.role = role
-    user.department = department
+    full_name = request.form.get("full_name")
+    email = request.form.get("email")
+    department = request.form.get("department")
 
-    # Update password only if provided
-    if password:
-        user.set_password(password)
+    if not full_name:
+        flash("Full name is required.", "danger")
+        return redirect(url_for("main.admin_users"))
+
+    user.full_name = full_name
+    user.department = department
 
     db.session.commit()
     flash(f"User {full_name} updated successfully!", "success")
     return redirect(url_for("main.admin_users"))
 
+# Activate / Deactivate user
+@bp.route("/admin/users/toggle/<int:id>", methods=["POST"])
+@login_required
+def toggle_user(id):
+    user = User.query.get_or_404(id)
+    if user.role == "admin":
+        return redirect(url_for("main.admin_users"))
 
-# Delete user
+    user.is_deactivated = not user.is_deactivated
+    db.session.commit()
+    return redirect(url_for("main.admin_users"))
+
+# Delete user (protect admins)
 @bp.route("/admin/users/delete/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def delete_user(id):
     user = User.query.get_or_404(id)
+    if user.role == "admin":
+        flash("Cannot delete admin accounts.", "danger")
+        return redirect(url_for("main.admin_users"))
+
     db.session.delete(user)
     db.session.commit()
-
     flash(f"User {user.full_name} deleted successfully!", "success")
     return redirect(url_for("main.admin_users"))
-# --------------------------------
+
 # ADD / EDIT / DELETE RECORDS (ADMIN)
 # --------------------------------
 @bp.route('/admin/add_document', methods=['GET', 'POST'])
@@ -521,16 +428,31 @@ def department_home():
 @login_required
 @role_required("user")
 def department_dashboard():
+    
     user_dept = current_user.department
-
+    closed_status = "Closed"
+    completed_status = "With Checked"
+    in_process_statuses = [
+        "Request for PR",
+        "Request for PO",
+        "Request for OBR",
+        "For Signature BAC Members - BAC Office",
+        "For Accounting Staff Validation",
+        "For Processing"
+    ]
+    total_documents = Record.query.filter_by(department=user_dept).count()
+    closed = Record.query.filter_by(department=user_dept, status=closed_status).count()
+    completed = Record.query.filter_by(department=user_dept, status=completed_status).count()
+    in_process = Record.query.filter(
+        Record.department == user_dept,
+        Record.status.in_(in_process_statuses)
+    ).count()
     stats = {
-        "total_documents": Record.query.filter_by(department=user_dept).count(),
-        "pending": Record.query.filter_by(department=user_dept, status="Pending").count(),
-        "completed": Record.query.filter_by(department=user_dept, status="Completed").count(),
-        "in_process": Record.query.filter(Record.department == user_dept,
-                                          Record.status.notin_(["Pending", "Completed"])).count()
+        "total_documents": total_documents,
+        "closed": closed,
+        "completed": completed,
+        "in_process": in_process
     }
-
     # Recent documents (latest 5)
     records = Record.query.filter_by(department=user_dept).order_by(Record.date_received.desc()).limit(5).all()
 

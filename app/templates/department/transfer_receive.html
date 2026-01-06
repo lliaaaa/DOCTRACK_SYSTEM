@@ -2,6 +2,7 @@
 {% block content %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 /* --- CONTENT --- */
@@ -30,38 +31,72 @@
 /* --- NOTIFICATION BELL --- */
 #notificationBell {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 90px;
+    right: 170px;   /* slightly inward from right */
     cursor: pointer;
-    font-size: 24px;
-    color: #007bff;
+    font-size: 28px;
+    color: #cd0808;
 }
+
+#notificationBell:hover { color: #0056b3; }
+
 #notificationCount {
     position: absolute;
     top: -8px;
     right: -8px;
     background: red;
     color: white;
-    font-size: 12px;
-    width: 20px;
-    height: 20px;
+    font-size: 25px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     text-align: center;
     line-height: 20px;
-}
-
-/* --- NOTIFICATION MODAL --- */
-.notification-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-.notification-item:last-child { border-bottom: none; }
-.notification-item button {
-    float: right;
+    font-weight: bold;
 }
 
 /* --- MODALS --- */
 .modal-body label { font-weight: 600; }
+
+/* --- NOTIFICATION MODAL ITEMS --- */
+.notification-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    position: relative;
+}
+.notification-item:last-child { border-bottom: none; }
+.notification-item button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* --- TABLE STYLING --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+th, td {
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #eee;
+}
+th {
+    font-weight: 600;
+    text-transform: uppercase;
+    background-color: #f1f3f5;
+    color: #495057;
+}
+tr:nth-child(even) { background-color: #ffffff; }
+tr:nth-child(odd) { background-color: #f8f9fa; }
+
 </style>
 
 <div class="content">
@@ -103,9 +138,13 @@
 
 <!-- Notification Bell -->
 <div id="notificationBell" data-bs-toggle="modal" data-bs-target="#notificationModal">
-    <i class="bi bi-bell-fill"></i>
+    <i class="fa fa-bell"></i>
+    {% if incoming_transfers|length > 0 %}
     <div id="notificationCount">{{ incoming_transfers|length }}</div>
+    {% endif %}
 </div>
+
+<!-- TRANSFER MODAL -->
 <div class="modal fade" id="transferModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -160,10 +199,9 @@
                         <strong>{{ inc.record.document_id }}</strong> - {{ inc.record.title }}<br>
                         From: {{ inc.from_department }} → To: {{ inc.to_department }}<br>
                         Status: {{ inc.status }}
-                        <button class="btn btn-success btn-sm receive-btn float-end" data-history-id="{{ inc.id }}">Confirm</button>
+                        <button class="btn btn-success btn-sm receive-btn" data-history-id="{{ inc.id }}">Confirm</button>
                     </div>
                     {% endfor %}
-
                 {% else %}
                     <p>No incoming transfers.</p>
                 {% endif %}
@@ -176,12 +214,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDocId = null;
 
-    // --- Transfer Button ---
+    // Transfer button
     document.querySelectorAll('.transfer-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             currentDocId = btn.dataset.docId;
-
-            // Reset modal selects
             document.getElementById('transferDept').value = "";
             document.getElementById('transferStatus').value = "";
         });
@@ -190,8 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('confirmTransferBtn').addEventListener('click', async () => {
         const toDept = document.getElementById('transferDept').value;
         const newStatus = document.getElementById('transferStatus').value;
-
-        if(!toDept || !newStatus) { alert("Select department and status."); return; }
+        if(!toDept || !newStatus){ alert("Select department and status."); return; }
         if(!confirm(`Transfer document to ${toDept}?`)) return;
 
         try {
@@ -210,77 +245,33 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch(err){ console.error(err); alert("Transfer failed."); }
     });
 
-    // --- Receive Buttons ---
-    function setupReceiveButtons() {
-        document.querySelectorAll('.receive-btn').forEach(btn => {
-            btn.onclick = async () => {
-                const docId = btn.dataset.docId;
-                if(!confirm("Confirm receipt of this document?")) return;
-
-                try {
-                    const res = await fetch(`/documents/receive/${docId}`, { method:'POST' });
-                    const data = await res.json();
-                    if(data.success){
-                        // Remove notification
-                        const notif = document.querySelector(`.notification-item[data-doc-id="${docId}"]`);
-                        if(notif) notif.remove();
-
-                        // Update main table if exists
-                        const row = document.querySelector(`tr[data-doc-id="${docId}"]`);
-                        if(row){
-                            row.querySelector('.current-office').textContent = data.new_department;
-                            row.querySelector('.status').textContent = data.status;
-                        }
-
-                        // Update notification count
-                        const countElem = document.getElementById('notificationCount');
-                        let count = parseInt(countElem.textContent);
-                        countElem.textContent = Math.max(count - 1, 0);
-
-                        alert(data.message);
-                    } else { alert(data.error); }
-                } catch(err){ console.error(err); alert("Failed to receive document."); }
-            }
-        });
-    }
-
-    setupReceiveButtons();
-});
-
+    // Receive buttons
     document.querySelectorAll('.receive-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const historyId = btn.dataset.historyId;
-        if(!confirm("Confirm receipt of this document?")) return;
+        btn.addEventListener('click', async () => {
+            const historyId = btn.dataset.historyId;
+            if(!confirm("Confirm receipt of this document?")) return;
 
-        try {
-            const res = await fetch(`/documents/receive/${historyId}`, { method:'POST' });
-            const data = await res.json();
+            try {
+                const res = await fetch(`/documents/receive/${historyId}`, { method:'POST' });
+                const data = await res.json();
+                if(data.success){
+                    const notif = document.querySelector(`.notification-item[data-history-id="${historyId}"]`);
+                    if(notif) notif.remove();
 
-            if(data.success){
-                // Remove notification
-                const notif = document.querySelector(`.notification-item[data-history-id="${historyId}"]`);
-                if(notif) notif.remove();
+                    const row = document.querySelector(`tr[data-doc-id="${data.record_id}"]`);
+                    if(row){
+                        row.querySelector('.current-office').textContent = data.new_department;
+                        row.querySelector('.status').textContent = data.status;
+                    }
 
-                // Update main table
-                const row = document.querySelector(`tr[data-doc-id="${data.record_id}"]`);
-                if(row){
-                    row.querySelector('.current-office').textContent = data.new_department;
-                    row.querySelector('.status').textContent = data.status;
-                }
+                    const badge = document.getElementById('notificationCount');
+                    let count = parseInt(badge.textContent) - 1;
+                    badge.textContent = count > 0 ? count : '';
 
-                // Update badge count
-                const badge = document.getElementById('notificationCount');
-                let count = parseInt(badge.textContent) - 1;
-                badge.textContent = count > 0 ? count : '';
-
-                alert(data.message);
-            } else {
-                alert(data.error);
-            }
-        } catch(err){
-            console.error(err);
-            alert("Failed to receive document.");
-        }
+                    alert(data.message);
+                } else { alert(data.error); }
+            } catch(err){ console.error(err); alert("Failed to receive document."); }
+        });
     });
 });
 </script>

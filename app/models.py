@@ -18,7 +18,7 @@ class User(db.Model, UserMixin):
 
     department = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), default="user", nullable=False)
-
+    is_deactivated = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def set_password(self, password: str):
@@ -83,19 +83,8 @@ class Department(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    head = db.Column(db.String(100), nullable=False)
-    employees = db.Column(db.Integer, default=0)
+    head = db.Column(db.String(100), nullable=True)
     documents = db.Column(db.Integer, default=0)
-    contact = db.Column(db.String(50), nullable=True)
-    email = db.Column(db.String(100), nullable=True)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
-    )
-
 
     def __str__(self):
         return self.name

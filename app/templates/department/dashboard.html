@@ -64,9 +64,9 @@ h1.dashboard-title {
 
 /* Card top border colors */
 .card.total { border-top-color: #0d6efd; }
-.card.pending { border-top-color: #ffc107; }
+.card.closed { border-top-color: #ffc107; }
 .card.completed { border-top-color: #198754; }
-.card.inprogress { border-top-color: #fd7e14; }
+.card.in_process { border-top-color: #fd7e14; }
 
 /* Recent documents section */
 .recent-documents {
@@ -157,9 +157,9 @@ h1.dashboard-title {
             <div class="card-number">{{ stats.total_documents }}</div>
         </div>
 
-        <div class="card pending">
-            <div class="card-title">Pending Documents</div>
-            <div class="card-number">{{ stats.pending }}</div>
+        <div class="card in_process">
+            <div class="card-title">In Process</div>
+            <div class="card-number">{{ stats.in_process }}</div>
         </div>
 
         <div class="card completed">
@@ -167,9 +167,9 @@ h1.dashboard-title {
             <div class="card-number">{{ stats.completed }}</div>
         </div>
 
-        <div class="card inprogress">
-            <div class="card-title">In Process</div>
-            <div class="card-number">{{ stats.in_process }}</div>
+        <div class="card closed">
+            <div class="card-title">Closed Documents</div>
+            <div class="card-number">{{ stats.closed }}</div>
         </div>
     </div>
 
