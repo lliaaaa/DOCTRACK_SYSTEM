@@ -2,7 +2,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_login import LoginManager
 
-from .models import db
+from .models import db, User, Department, DocumentStatus, DocumentType
 from config import Config
 
 migrate = Migrate()
@@ -29,6 +29,68 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        
+        if not User.query.filter_by(role='admin').first():
+            admin = User(full_name="Admin", email="admin@site.com", role="admin")
+            admin.set_password("AdminPass123")
+            db.session.add(admin)
+            db.session.commit()
+            
+        departments = [
+            "ABC Office",
+            "Accounting Office",
+            "Agriculture Office",
+            "Assessors Office",
+            "Bids and Awards Committee",
+            "COMELEC Office",
+            "Engineering",
+            "Human Resources Office",
+            "Library Office",
+            "Mayor Office",
+            "MENRO Office",
+            "MDRRMO Office",
+            "MPDC Office",
+            "Municipal Health Office",
+            "Treasurer Office",
+            "Vice Mayor Office"
+        ]
+
+        for name in departments:
+            if not Department.query.filter_by(name=name).first():
+                db.session.add(Department(name=name))
+                db.session.commit()
+
+        document_types = [
+            "SVP",
+            "Bidding",
+            "Reimbursement of Diesel",
+            "Reimbursement of Tarpaulin",
+            "Burial Assistance",
+            "T.E.V"
+        ]
+
+        for name in document_types:
+            if not DocumentType.query.filter_by(name=name).first():
+                db.session.add(DocumentType(name=name))
+                db.session.commit()
+
+        document_statuses = [
+            "For Signature Mayor",
+            "Request for PR",
+            "Request for PO",
+            "Request for OBR",
+            "For Signature BAC Members - BAC Office",
+            "For Accounting Staff Validation",
+            "For Processing",
+            "With Checked",
+            "Closed"
+        ]
+
+        for name in document_statuses:
+            if not DocumentStatus.query.filter_by(name=name).first():
+                db.session.add(DocumentStatus(name=name))
+
+        db.session.commit()
 
     return app
 
