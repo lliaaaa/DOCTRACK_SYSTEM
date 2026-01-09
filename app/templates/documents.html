@@ -1,0 +1,203 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<style>
+.content {
+    margin-left: 140px;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.content.collapsed {
+    margin-left: 70px;
+}
+
+/* CONTROLS */
+.controls-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.controls-container input, 
+.controls-container select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* DOCUMENT TABLE */
+.document-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+.document-table th, .document-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+.document-table th {
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-badge.closed {
+    background: #6c757d20;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+}
+.status-badge.completed {
+    background: #19875420;
+    border: 1px solid #198754;
+    color: #198754;
+}
+.status-badge.inprocess {
+    background: #ffc10720;
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
+/* ACTION BUTTON */
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.close-btn i {
+    font-size: 20px;
+    color: #dc3545;
+}
+.close-btn i:hover {
+    color: #a71d2a;
+}
+</style>
+
+<div class="content">
+
+    <h1 class="page-title">Documents</h1>
+    <p>Tracking documents for <strong>{{ current_user.department }}</strong></p>
+
+    <!-- FILTERS -->
+    <div class="controls-container">
+        <input type="search" id="searchInput" placeholder="Search document number or title..." oninput="renderTable()">
+        <select id="filterStatus" onchange="renderTable()">
+            <option value="">All Status</option>
+            <option value="closed">Closed</option>
+            <option value="completed">Completed</option>
+            <option value="inprocess">In Process</option>
+        </select>
+    </div>
+
+    <!-- DOCUMENT TABLE -->
+    <div class="table-wrapper">
+        <table class="document-table">
+            <thead>
+                <tr>
+                    <th>Document No.</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Date Received</th>
+                    <th>Current Office</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr data-doc-id="{{ record.id }}">
+                    <td>{{ record.document_id }}</td>
+                    <td>{{ record.title }}</td>
+                    <td>{{ record.doc_type }}</td>
+                    <td>{{ record.date_received.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ record.department }}</td>
+
+                    <!-- STATUS -->
+                    <td class="status-cell">
+                        {% if record.status == 'Closed' %}
+                            <span class="status-badge closed">Closed</span>
+                        {% elif 'With Checked' in record.status %}
+                            <span class="status-badge completed">Completed</span>
+                        {% else %}
+                            <span class="status-badge inprocess">In Process</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ record.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+
+                    <!-- ACTIONS -->
+                    <td class="text-center">
+                        {% if current_user.role == 'admin' and record.department == current_user.department %}
+                            {% if record.status != 'Closed' %}
+                                <button class="close-btn close-btn-js" data-id="{{ record.id }}" title="Close Document">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            {% else %}
+                                <span class="badge bg-secondary">Closed</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const rows = document.querySelectorAll('.document-table tbody tr');
+
+    rows.forEach(row => {
+        const docNo = row.children[0].textContent.toLowerCase();
+        const title = row.children[1].textContent.toLowerCase();
+        const statusText = row.querySelector('.status-cell').textContent.toLowerCase();
+
+        let statusMatch = true;
+        if (statusFilter === 'closed') statusMatch = statusText.includes('closed');
+        else if (statusFilter === 'completed') statusMatch = statusText.includes('completed');
+        else if (statusFilter === 'inprocess') statusMatch = !statusText.includes('closed') && !statusText.includes('completed');
+
+        const searchMatch = docNo.includes(search) || title.includes(search);
+
+        row.style.display = (searchMatch && statusMatch) ? '' : 'none';
+    });
+}
+
+/* CLOSE DOCUMENT (ADMIN ONLY) */
+document.querySelectorAll('.close-btn-js').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const docId = btn.dataset.id;
+        if (!confirm('Are you sure you want to close this document?')) return;
+
+        try {
+            const res = await fetch(`/documents/close/${docId}`, { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to close document');
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to close document.");
+        }
+    });
+});
+</script>
+
+{% endblock %}

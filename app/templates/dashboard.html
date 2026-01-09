@@ -1,9 +1,5 @@
-{% extends 'admin/index.html' %}
+{% extends 'index.html' %}
 {% block content %}
-<!-- ✅ BOOTSTRAP 5 CSS + JS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <style>
 .content {
     margin-left: 140px;
@@ -29,6 +25,12 @@
 
 /* DOCUMENT TABLE */
 .recent-documents, .document-status-breakdown { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+.breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
 .document-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
 .document-table th, .document-table td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
 .document-table th { font-weight: bold; color: #555; text-transform: uppercase; }

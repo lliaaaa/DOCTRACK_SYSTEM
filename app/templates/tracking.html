@@ -1,9 +1,6 @@
-{% extends 'admin/index.html' %}
+{% extends 'index.html' %}
 {% block content %}
 <!-- ✅ BOOTSTRAP 5 CSS + JS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <style>
 .content {
     margin-left: 140px;
@@ -97,7 +94,7 @@ tr:hover { background-color: #f1f1f1; cursor:pointer; }
   <p class="greeting-text">Welcome to Admin Portal Dashboard</strong></p>
 
 <div class="all-docs-section">
-    <form class="search-container" method="GET" action="{{ url_for('main.admin_trace') }}">
+    <form class="search-container" method="GET" action="{{ url_for('main.trace') }}">
         <input type="text" name="q" placeholder="Enter keyword or Document ID" value="{{ request.args.get('q', '') }}">
         <button type="submit">Search</button>
     </form>
@@ -126,7 +123,7 @@ tr:hover { background-color: #f1f1f1; cursor:pointer; }
                             <td>{{ doc.department }}</td>
                             <td><span class="status-badge s-{{ doc.department|lower }}">{{ doc.status }}</span></td>
                             <td>{{ doc.updated_at.strftime('%Y-%m-%d %H:%M') if doc.updated_at and doc.updated_at is not string else '-' }}</td>
-                            <td><a href="{{ url_for('main.admin_trace', q=doc.document_id) }}">Trace</a></td>
+                            <td><a href="{{ url_for('main.trace', q=doc.document_id) }}">Trace</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -35,13 +35,13 @@
         border-radius: 20px;
         overflow: hidden;
         background-color: white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
     }
 
     .card-header {
@@ -113,7 +113,16 @@
         transform: scale(1.03);
     }
 </style>
-
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 <h1>Access Portal</h1>
 <p>Select your role to access the system</p>
 
@@ -123,13 +132,13 @@
     <div class="card">
         <div class="card-header admin-header">
             <i class="fas fa-shield-alt"></i>
-            <h2>Administrator</h2>
+            <h2>Office Administrator</h2>
         </div>
         <div class="card-content">
             <ul>
+                <li>Access all system features</li>
+                <li>Add, edit, and assign documents</li>
                 <li>Manage users and roles</li>
-                <li>View system analytics and generate reports</li>
-                <li>Oversee system security and configurations</li>
             </ul>
             <a href="{{ url_for('auth.login', role='admin') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
         </div>
@@ -139,13 +148,12 @@
     <div class="card">
         <div class="card-header client-header">
             <i class="fas fa-users"></i>
-            <h2>Offices</h2>
+            <h2>Office User</h2>
         </div>
         <div class="card-content">
             <ul>
-                <li>Track document activities</li>
-                <li>Manage daily tasks and workflows</li>
-                <li>Communicate with other departments</li>
+                <li>Track documents assigned to your department</li>
+                <li>Track documents that passed through your department</li>
             </ul>
             <a href="{{ url_for('auth.login', role='office') }}" class="btn btn-client">ACCESS OFFICE PANEL</a>
         </div>

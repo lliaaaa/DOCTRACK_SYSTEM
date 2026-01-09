@@ -18,20 +18,21 @@ def login():
             flash("No account found with this email.", "danger")
             return redirect(url_for("auth.login"))
 
+        # ❌ Prevent login if deactivated
+        if user.is_deactivated:
+            flash("This account has been deactivated. Contact admin.", "danger")
+            return redirect(url_for("auth.login"))
+
         if not user.check_password(password):
             flash("Incorrect password.", "danger")
             return redirect(url_for("auth.login"))
 
         # ✅ Login successful
         login_user(user)
-
-        # Redirect based on role
-        if user.role.lower() == "admin":
-            return redirect(url_for("main.admin_home"))
-        else:
-            return redirect(url_for("main.department_home"))
+        return redirect(url_for("main.dashboard"))
 
     return render_template("login.html")
+
 
 
 @bp.route("/change-password", methods=["POST"])

@@ -48,7 +48,7 @@ class Record(db.Model):
     doc_type = db.Column(db.String(50), nullable=False)
     department = db.Column(db.String(100), nullable=False)
 
-    implementing_office = db.Column(db.String(100), nullable=True)  # ✅ MUST EXIST
+    implementing_office = db.Column(db.String(100), nullable=False)
 
     date_received = db.Column(db.Date, nullable=False)
     amount = db.Column(db.Float, nullable=True)
@@ -83,8 +83,6 @@ class Department(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    head = db.Column(db.String(100), nullable=True)
-    documents = db.Column(db.Integer, default=0)
 
     def __str__(self):
         return self.name

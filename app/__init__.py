@@ -30,30 +30,40 @@ def create_app():
     with app.app_context():
         db.create_all()
         
-        if not User.query.filter_by(role='admin').first():
-            admin = User(full_name="Admin", email="admin@site.com", role="admin")
-            admin.set_password("AdminPass123")
-            db.session.add(admin)
-            db.session.commit()
-            
         departments = [
-            "ABC Office",
-            "Accounting Office",
-            "Agriculture Office",
-            "Assessors Office",
-            "Bids and Awards Committee",
-            "COMELEC Office",
-            "Engineering",
-            "Human Resources Office",
-            "Library Office",
-            "Mayor Office",
-            "MENRO Office",
-            "MDRRMO Office",
-            "MPDC Office",
-            "Municipal Health Office",
-            "Treasurer Office",
-            "Vice Mayor Office"
-        ]
+        "ABC Office",
+        "Accounting Office",
+        "Agriculture Office",
+        "Assessors Office",
+        "Bids and Awards Committee",
+        "COMELEC Office",
+        "Engineering",
+        "Human Resources Office",
+        "Library Office",
+        "Mayor Office",
+        "MENRO Office",
+        "MDRRMO Office",
+        "MPDC Office",
+        "Municipal Health Office",
+        "Treasurer Office",
+        "Vice Mayor Office"
+    ]
+
+        for dept in departments:
+            # Check if admin for this department already exists
+            if not User.query.filter_by(email=f"{dept.lower().replace(' ', '')}@site.com").first():
+                # Create a new admin for the department
+                admin = User(
+                    full_name=f"{dept} Admin",
+                    email=f"{dept.lower().replace(' ', '')}@site.com",
+                    role="admin",
+                    department=dept
+                )
+                admin.set_password("123")  # default password
+                db.session.add(admin)
+
+                db.session.commit()
+
 
         for name in departments:
             if not Department.query.filter_by(name=name).first():

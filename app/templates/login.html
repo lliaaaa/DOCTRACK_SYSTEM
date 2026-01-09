@@ -5,119 +5,142 @@
 {% set role = request.args.get('role', 'office') %}
 
 {% set ROLE_CONFIG = {
-    'admin': {
-        'title': 'Administrator Login',
-        'subtitle': 'Restricted system access',
-        'icon': 'fas fa-shield-alt',
-        'color': '#c82333',
-        'bg': 'linear-gradient(135deg, #c82333, #e74c3c)',
-        'button': 'Access Admin Panel'
-    },
-    'office': {
-        'title': 'Office Login',
-        'subtitle': 'Office staff access',
-        'icon': 'fas fa-users',
-        'color': '#8e2de2',
-        'bg': 'linear-gradient(135deg, #8e2de2, #ff6fd8)',
-        'button': 'Access Office Panel'
-    }
+'admin': {
+'title': 'Administrator Login',
+'subtitle': 'Restricted system access',
+'icon': 'fas fa-shield-alt',
+'color': '#c82333',
+'bg': 'linear-gradient(135deg, #c82333, #e74c3c)',
+'button': 'Access Admin Panel'
+},
+'office': {
+'title': 'Office Login',
+'subtitle': 'Office staff access',
+'icon': 'fas fa-users',
+'color': '#8e2de2',
+'bg': 'linear-gradient(135deg, #8e2de2, #ff6fd8)',
+'button': 'Access Office Panel'
+}
 } %}
 
 {% set cfg = ROLE_CONFIG.get(role, ROLE_CONFIG['office']) %}
 
 {# -------------------- STYLES -------------------- #}
 <style>
-.login-card {
-    padding: 40px 35px;
-    border-radius: 18px;
-    background: #ffffff;           /* pure white card */
-    color: #111;                   /* dark text for readability */
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);  /* subtle shadow */
-    border: 1px solid rgba(0,0,0,0.05);       /* very light border */
-    position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
+    .login-card {
+        padding: 40px 35px;
+        border-radius: 18px;
+        background: #ffffff;
+        /* pure white card */
+        color: #111;
+        /* dark text for readability */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        /* subtle shadow */
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        /* very light border */
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
 
-.login-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-}
-.login-card a {
-    text-decoration: none;       /* remove underline */
-    color: #dc2626;              /* accent color */
-    transition: color 0.2s;
-}
+    .login-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
 
-.login-card a:hover {
-    color: #a71d2a;              /* slightly darker on hover */
-    text-decoration: none;
-}
+    .login-card a {
+        text-decoration: none;
+        /* remove underline */
+        color: #dc2626;
+        /* accent color */
+        transition: color 0.2s;
+    }
 
-/* Optional: smaller font for back link */
-.back-link {
-    display: inline-block;
-    font-size: 14px;
-    font-weight: 500;
-}
+    .login-card a:hover {
+        color: #a71d2a;
+        /* slightly darker on hover */
+        text-decoration: none;
+    }
 
-/* Forgot password link */
-.text-end a {
-    font-size: 13px;
-}
-.login-icon {
-    width: 70px;
-    height: 70px;
-    margin: 0 auto 20px;
-    border-radius: 50%;
-    background: #f9f9f9;  /* light gray circle for contrast */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 30px;
-    color: #dc2626;       /* pick a soft accent color */
-}
+    /* Optional: smaller font for back link */
+    .back-link {
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 500;
+    }
 
-.login-title {
-    text-align: center;
-    font-size: 22px;
-    font-weight: 600;
-}
+    /* Forgot password link */
+    .text-end a {
+        font-size: 13px;
+    }
 
-.login-subtitle {
-    margin: 8px 0 30px;
-    text-align: center;
-    font-size: 14px;
-    color: #6b7280;
-}
+    .login-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: #f9f9f9;
+        /* light gray circle for contrast */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        color: #dc2626;
+        /* pick a soft accent color */
+    }
 
-.form-control {
-    height: 46px;
-    border-radius: 10px;
-    border: 1px solid #d1d5db; /* light gray border */
-}
+    .login-title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: 600;
+    }
 
-.form-control:focus {
-    box-shadow: 0 0 0 2px rgba(111,66,193,0.3); /* soft accent focus */
-    border-color: #6f42c1;
-}
+    .login-subtitle {
+        margin: 8px 0 30px;
+        text-align: center;
+        font-size: 14px;
+        color: #6b7280;
+    }
 
-.login-btn {
-    height: 48px;
-    border-radius: 10px;
-    font-weight: 600;
-    color: #fff;
-    background: #dc2626;   /* accent color */
-    border: none;
-    margin-top: 10px;
-}
+    .form-control {
+        height: 46px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        /* light gray border */
+    }
 
-.login-btn:hover {
-   background: #f84040;   /* accent color */
-   color: white;
-}
+    .form-control:focus {
+        box-shadow: 0 0 0 2px rgba(111, 66, 193, 0.3);
+        /* soft accent focus */
+        border-color: #6f42c1;
+    }
 
+    .login-btn {
+        height: 48px;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #fff;
+        background: #dc2626;
+        /* accent color */
+        border: none;
+        margin-top: 10px;
+    }
+
+    .login-btn:hover {
+        background: #f84040;
+        /* accent color */
+        color: white;
+    }
 </style>
-
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 {# -------------------- CONTENT -------------------- #}
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
     <div class="col-md-4">
@@ -140,26 +163,13 @@
 
                 <div class="mb-3">
                     <label for="email" class="form-label">Email Address</label>
-                    <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        class="form-control"
-                        required
-                        autocomplete="email"
-                    >
+                    <input id="email" type="email" name="email" class="form-control" required autocomplete="email">
                 </div>
 
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input
-                        id="password"
-                        type="password"
-                        name="password"
-                        class="form-control"
-                        required
-                        autocomplete="current-password"
-                    >
+                    <input id="password" type="password" name="password" class="form-control" required
+                        autocomplete="current-password">
                 </div>
 
                 <div class="text-end mb-3">
