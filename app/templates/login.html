@@ -14,12 +14,11 @@
 'button': 'Access Admin Panel'
 },
 'office': {
-'title': 'Office Login',
-'subtitle': 'Office staff access',
+'title': 'Document Tracking System',
 'icon': 'fas fa-users',
 'color': '#8e2de2',
 'bg': 'linear-gradient(135deg, #8e2de2, #ff6fd8)',
-'button': 'Access Office Panel'
+'button': 'Login'
 }
 } %}
 
@@ -156,19 +155,18 @@
             </div>
 
             <h3 class="login-title">{{ cfg.title }}</h3>
-            <p class="login-subtitle">{{ cfg.subtitle }}</p>
 
             <form method="POST" novalidate>
                 <input type="hidden" name="role" value="{{ role }}">
 
                 <div class="mb-3">
                     <label for="email" class="form-label">Email Address</label>
-                    <input id="email" type="email" name="email" class="form-control" required autocomplete="email">
+                    <input id="email" type="email" name="email" value="abcoffice@site.com" class="form-control" required autocomplete="email">
                 </div>
 
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input id="password" type="password" name="password" class="form-control" required
+                    <input id="password" type="password" name="password" value="123" class="form-control" required
                         autocomplete="current-password">
                 </div>
 

@@ -132,63 +132,113 @@ h1.dashboard-title { margin-bottom: 5px !important; font-size: 32px; }
               </select>
           </div>
           
+          <div class="col-half mb-3" id="amount-wrapper" style="display:none;">
+            <label for="amount" class="form-label">Amount (Optional)</label>
+            <input type="number" class="form-control" id="amount" name="amount" placeholder="0.00">
+        </div>
           <div class="col-half mb-3">
-              <label for="amount" class="form-label">Amount (Optional)</label>
-              <input type="number" class="form-control" id="amount" name="amount" placeholder="0.00">
-          </div>
-          <div class="col-half mb-3">
-              <label for="implementing_office" class="form-label">Implementing Office</label>
-              <select class="form-select" id="implementing_office" name="implementing_office" required>
-                  <option value="" selected disabled>Select Office</option>
-                  {% for dept in departments %}
-                  <option value="{{ dept.name }}">{{ dept.name }}</option>
-                  {% endfor %}
-              </select>
+              <label class="form-label">Implementing Office</label>
+              <input type="text" class="form-control" value="{{ current_user.department }}" readonly>
+              <input type="hidden" name="implementing_office" value="{{ current_user.department }}">
+
           </div>
           <div class="col-half mb-3">
               <label for="released_by" class="form-label">Released By</label>
-              <select class="form-select" id="released_by" name="released_by" required>
-                  <option value="" selected disabled>Select Employee</option>
-                  {% for user in users %}
-                      <option value="{{ user.full_name }}">{{ user.full_name }}</option>
-                  {% endfor %}
-              </select>
+              <input
+                    type="text"
+                    class="form-control"
+                    value="{{ current_user.full_name }}"
+                    readonly
+                >
+                <input
+                    type="hidden"
+                    name="released_by"
+                    value="{{ current_user.full_name }}"
+                >
           </div>
       </div>
 
       <div class="row-cols">
         <div class="col-half mb-3">
-              <label for="received_by" class="form-label">Received By</label>
-              <select class="form-select" id="received_by" name="received_by" required>
-                  <option value="" selected disabled>Select Employee</option>
-                  {% for user in users %}
-                      <option value="{{ user.full_name }}">{{ user.full_name }}</option>
-                  {% endfor %}
-              </select>
-          </div>
-          <div class="col-half mb-3">
-              <label for="date_received" class="form-label">Date Received</label>
-              <input type="date" class="form-control" id="date_received" name="date_received" required>
-          </div>
-      </div>
-
-
-      <div class="mb-3">
+            <label for="received_by" class="form-label">Received By</label>
+            <select class="form-select" id="received_by" name="received_by" required>
+                <option value="" selected disabled>Select Employee</option>
+                {% for user in users %}
+                    {% if user.role != "Admin" %} <!-- Exclude Admin -->
+                    <option value="{{ user.full_name }}">{{ user.full_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-half mb-3">
             <label for="status" class="form-label">Status</label>
             <select class="form-select" id="status" name="status" required>
                 <option value="" selected disabled>Select Status</option>
                 {% for stat in document_status %}
-                    {% if stat.name != "Closed" %}
-                        <option value="{{ stat.name }}">{{ stat.name }}</option>
-                    {% endif %}
+                    <option value="{{ stat.name }}" class="status-option" data-type="{{ stat.document_type }}">{{ stat.name }}</option>
                 {% endfor %}
             </select>
+        </div>
       </div>
-
 
       <button type="submit" class="btn-submit">Add Document</button>
   </form>
   <!-- ✅ FORM END -->
 </div>
+<script>
+const monetaryTypes = [
+    "SVP",
+    "Bidding",
+    "Reimbursement of Diesel",
+    "Reimbursement of Tarpaulin",
+    "Burial Assistance",
+    "T.E.V"
+];
+
+const statusMap = {
+    "Bidding": [
+        "For Signature Mayor",
+        "Request for PR",
+        "Request for PO",
+        "Request for OBR",
+        "For Signature BAC Members - BAC Office",
+        "For Accounting Staff Validation",
+        "For Processing",
+        "With Checked"
+    ],
+    "SVP": ["Pending Approval", "Processing", "Completed"], // example, customize
+    "Reimbursement of Diesel": ["Pending", "Approved", "Paid"],
+    "Reimbursement of Tarpaulin": ["Pending", "Approved", "Paid"],
+    "Burial Assistance": ["Pending", "Approved", "Paid"],
+    "T.E.V": ["Pending", "Approved", "Paid"],
+    "Other": ["Pending", "Processing", "Completed"]
+};
+
+const docTypeSelect = document.getElementById('doc_type');
+const amountWrapper = document.getElementById('amount-wrapper');
+const statusSelect = document.getElementById('status');
+
+docTypeSelect.addEventListener('change', function() {
+    const selectedType = this.value;
+
+    // Show/Hide amount field
+    if (monetaryTypes.includes(selectedType)) {
+        amountWrapper.style.display = 'block';
+    } else {
+        amountWrapper.style.display = 'none';
+        document.getElementById('amount').value = '';
+    }
+
+    // Populate status dropdown
+    statusSelect.innerHTML = '<option value="" selected disabled>Select Status</option>';
+    const statuses = statusMap[selectedType] || statusMap["Other"];
+    statuses.forEach(st => {
+        const opt = document.createElement('option');
+        opt.value = st;
+        opt.textContent = st;
+        statusSelect.appendChild(opt);
+    });
+});
+</script>
 
 {% endblock %}

@@ -2,7 +2,7 @@ import uuid
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func, or_
-from datetime import datetime
+from datetime import datetime, date, timezone
 
 from . import db
 from .models import (
@@ -202,13 +202,13 @@ def add_document():
         doc_type=request.form["doc_type"],
         department=request.form["implementing_office"],
         implementing_office=request.form["implementing_office"],
-        date_received=date_received,
+        date_received = date.today(),
         amount=amount,
-        released_by=request.form["released_by"],
+        released_by=current_user.full_name,
         received_by=request.form["received_by"],
         status=request.form["status"],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
 
         db.session.add(record)
@@ -221,7 +221,7 @@ def add_document():
             to_department=request.form["implementing_office"],
             action_by=current_user.full_name,
             status=request.form["status"],
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
 
         db.session.add(history)
@@ -276,11 +276,11 @@ def transfer_document(record_id):
         to_department=data["to_department"],
         action_by=current_user.full_name,
         status=data["status"],
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)
     )
 
     record.status = data["status"]
-    record.updated_at = datetime.utcnow()
+    record.updated_at = datetime.now(timezone.utc)
 
     db.session.add(history)
     db.session.commit()
@@ -304,11 +304,11 @@ def receive_document(history_id):
     record = history.record
     record.department = current_user.department
     record.status = history.status
-    record.updated_at = datetime.utcnow()
+    record.updated_at = datetime.now(timezone.utc)
 
     history.action_type = "received"
     history.action_by = current_user.full_name
-    history.timestamp = datetime.utcnow()
+    history.timestamp = datetime.now(timezone.utc)
 
     db.session.commit()
 

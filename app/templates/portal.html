@@ -1,163 +1,196 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document Tracking System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-{% block content %}
-<style>
     body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f8f9fc;
-        text-align: center;
-        margin: 0;
-        padding: 0;
+      line-height: 1.6;
+      color: #333;
+      scroll-behavior: smooth;
     }
 
-    h1 {
-        color: #242121;
-        font-size: 2.5rem;
-        margin-top: 40px;
+    /* HERO / WELCOME SECTION */
+    .hero {
+      height: 100vh;
+      background: linear-gradient(135deg, #7e2424, #a10808);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
     }
 
-    p {
-        color: #555;
-        margin-bottom: 40px;
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 15px;
     }
 
-    .container {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 30px;
-        padding: 20px;
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 700px;
+      margin-bottom: 30px;
     }
 
-    .card {
-        width: 500px;
-        height: 500px;
-        border-radius: 20px;
-        overflow: hidden;
-        background-color: white;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    .login-btn {
+      text-decoration: none;
+      background: #fff;
+      color: #9e1616;
+      padding: 12px 30px;
+      border-radius: 30px;
+      font-weight: bold;
+      transition: all 0.3s ease;
     }
 
-    .card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    .login-btn:hover {
+      background: #f1f1f1;
+      transform: translateY(-2px);
     }
 
-    .card-header {
-        padding: 40px 0;
-        color: white;
+    .scroll-down {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.9rem;
+      opacity: 0.8;
     }
 
-    .admin-header {
-        background: linear-gradient(135deg, #c82333, #e74c3c);
+    /* GENERAL SECTION STYLING */
+    section {
+      padding: 80px 20px;
+      max-width: 1000px;
+      margin: auto;
     }
 
-    .client-header {
-        background: linear-gradient(135deg, #c82333, #e74c3c);
+    section h2 {
+      text-align: center;
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      color: #a70f0f;
     }
 
-    .card-header i {
-        font-size: 60px;
-        margin-bottom: 10px;
+    section p {
+      text-align: center;
+      max-width: 800px;
+      margin: auto;
+      font-size: 1.05rem;
     }
 
-    .card h2 {
-        margin: 10px 0 0;
+    /* ABOUT SECTION */
+    #about {
+      background: #f9f9f9;
     }
 
-    .card-content {
-        padding: 20px;
-        text-align: left;
-        color: #666;
-        font-size: 18px;
-        line-height: 1.8;
+    /* DEVELOPER TEAM */
+    .team {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
     }
 
-    .card-content ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+    .team-member {
+      background: #fff;
+      border-radius: 10px;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
     }
 
-    .card-content li::before {
-        content: "• ";
-        color: #888;
+    .team-member h3 {
+      margin-bottom: 8px;
+      color: #9c0b0b;
     }
 
-    .btn {
-        display: block;
-        width: 100%;
-        margin: 25px auto;
-        padding: 12px 0;
-        border-radius: 10px;
-        font-weight: bold;
-        font-size: 15px;
-        text-decoration: none;
-        text-align: center;
-        transition: 0.3s;
+    .team-member p {
+      font-size: 0.95rem;
+      color: #555;
     }
 
-    .btn-admin {
-        background-color: #c82333;
-        color: white;
+    footer {
+      background: #a10d0d;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      margin-top: 60px;
+      font-size: 0.9rem;
     }
+  </style>
+</head>
+<body>
 
-    .btn-client {
-        background-color: #c82333;
-        color: white;
-    }
+  <!-- WELCOME / HERO -->
+  <div class="hero" id="home">
+    <h1>Document Tracking System</h1>
+    <p>
+      A centralized system designed to monitor, record, and track documents efficiently and transparently.
+    </p>
+    <a href="{{ url_for('auth.login') }}" class="login-btn">Login</a>
+    <div class="scroll-down">Scroll down to learn more ↓</div>
+  </div>
 
-    .btn:hover {
-        opacity: 0.9;
-        transform: scale(1.03);
-    }
-</style>
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-    {{ message }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% endfor %}
-{% endif %}
-{% endwith %}
-<h1>Access Portal</h1>
-<p>Select your role to access the system</p>
+  <!-- ABOUT SYSTEM -->
+  <section id="about">
+    <h2>About the System</h2>
+    <p>
+      The Dress Code Violation Record System is developed to help institutions
+      maintain discipline and professionalism. It allows authorized personnel
+      to log violations, track records, and generate reports with ease. This
+      system promotes accountability while ensuring accurate and secure data
+      management.
+    </p>
+  </section>
 
-<div class="container">
+  <!-- DEVELOPER TEAM -->
+  <section id="developers">
+    <h2>Developer Team</h2>
+    <p>
+      This system was designed and developed by a dedicated team committed to
+      creating efficient, user-friendly, and reliable solutions.
+    </p>
 
-    <!-- ADMIN CARD -->
-    <div class="card">
-        <div class="card-header admin-header">
-            <i class="fas fa-shield-alt"></i>
-            <h2>Office Administrator</h2>
-        </div>
-        <div class="card-content">
-            <ul>
-                <li>Access all system features</li>
-                <li>Add, edit, and assign documents</li>
-                <li>Manage users and roles</li>
-            </ul>
-            <a href="{{ url_for('auth.login', role='admin') }}" class="btn btn-admin">ACCESS ADMIN PANEL</a>
-        </div>
+    <div class="team">
+      <div class="team-member">
+        <h3>Larraine Natalia Camposano</h3>
+      </div>
+      <div class="team-member">
+        <h3>Patrick Cañete</h3>
+      </div>
+      <div class="team-member">
+        <h3>Je-ann Lace</h3>
+      </div>
+      <div class="team-member">
+        <h3>Ronald Bradley Limbo</h3>
+      </div>
     </div>
-
-    <!-- CLIENT/Office CARD -->
-    <div class="card">
-        <div class="card-header client-header">
-            <i class="fas fa-users"></i>
-            <h2>Office User</h2>
-        </div>
-        <div class="card-content">
-            <ul>
-                <li>Track documents assigned to your department</li>
-                <li>Track documents that passed through your department</li>
-            </ul>
-            <a href="{{ url_for('auth.login', role='office') }}" class="btn btn-client">ACCESS OFFICE PANEL</a>
-        </div>
+    <div class="team">
+      <div class="team-member">
+        <h3>Micah Ludovice</h3>
+      </div>
+      <div class="team-member">
+        <h3>Princess Anelleth Mendoza</h3>
+      </div>
+      <div class="team-member">
+        <h3>Shane Armie Morales</h3>
+      </div>
+      <div class="team-member">
+        <h3>Arabella Tapay</h3>
+      </div>
     </div>
+  </section>
 
-</div>
-{% endblock %}
+  <footer>
+    © 2026 Dress Code Violation Record System. All Rights Reserved.
+  </footer>
+
+</body>
+</html>

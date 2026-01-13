@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import uuid
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
@@ -19,7 +20,11 @@ class User(db.Model, UserMixin):
     department = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), default="user", nullable=False)
     is_deactivated = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(
+    db.DateTime(timezone=True),
+    default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+)
+
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
@@ -52,11 +57,18 @@ class Record(db.Model):
 
     date_received = db.Column(db.Date, nullable=False)
     amount = db.Column(db.Float, nullable=True)
-    released_by = db.Column(db.String(100), nullable=True)
-    received_by = db.Column(db.String(100), nullable=True)
+    released_by = db.Column(db.String(100), nullable=False)
+    received_by = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila")),
+        onupdate=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
 
     history = db.relationship(
         'RecordHistory',
@@ -69,11 +81,11 @@ class RecordHistory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     record_id = db.Column(db.Integer, db.ForeignKey('records.id'), nullable=False)
-    action_type = db.Column(db.String(20), nullable=False)  # 'transfer' or 'receive'
-    status = db.Column(db.String(100), nullable=False)      # status after the action
+    action_type = db.Column(db.String(20), nullable=False) 
+    status = db.Column(db.String(100), nullable=False) 
     from_department = db.Column(db.String(100), nullable=True)
     to_department = db.Column(db.String(100), nullable=True)
-    action_by = db.Column(db.String(100), nullable=True)    # user performing the action
+    action_by = db.Column(db.String(100), nullable=True) 
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     record = db.relationship('Record', back_populates='history')
