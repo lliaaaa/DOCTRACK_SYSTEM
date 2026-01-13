@@ -190,26 +190,28 @@ def add_document():
     departments = Department.query.all()
 
     if request.method == "POST":
-        date_received = datetime.strptime(
-            request.form["date_received"], "%Y-%m-%d"
-        ).date()
+    # Date received (use form or default to today)
+        date_received_input = request.form.get("date_received", "").strip()
+        date_received = datetime.strptime(date_received_input, "%Y-%m-%d").date() if date_received_input else date.today()
+
+        # Amount (optional)
         amount_input = request.form.get("amount", "").strip()
         amount = float(amount_input) if amount_input else None
 
         record = Record(
-        document_id=f"DOC-{uuid.uuid4().hex[:8].upper()}",
-        title=request.form["title"],
-        doc_type=request.form["doc_type"],
-        department=request.form["implementing_office"],
-        implementing_office=request.form["implementing_office"],
-        date_received = date.today(),
-        amount=amount,
-        released_by=current_user.full_name,
-        received_by=request.form["received_by"],
-        status=request.form["status"],
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
-    )
+            document_id=f"DOC-{uuid.uuid4().hex[:8].upper()}",
+            title=request.form["title"],
+            doc_type=request.form["doc_type"],
+            department=request.form["implementing_office"],
+            implementing_office=request.form["implementing_office"],
+            date_received=date_received,
+            amount=amount,
+            released_by=current_user.full_name,
+            received_by=request.form["received_by"],
+            status=request.form["status"],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
 
         db.session.add(record)
         db.session.flush()
@@ -229,6 +231,7 @@ def add_document():
 
         flash("Document added successfully.", "success")
         return redirect(url_for("main.documents"))
+
 
     return render_template(
         "admin/add_document.html",
