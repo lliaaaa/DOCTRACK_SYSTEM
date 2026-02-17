@@ -4,390 +4,197 @@
     <meta charset="UTF-8">
     <title>DTS - Admin</title>
 
-    <!-- Font Awesome -->
+    <!-- Icons & Bootstrap -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f4f4f4;
-        }
+<style>
+:root{ --sidebar-width: 250px; --content-offset: 20px; --collapsed-offset: 10px; }
+body { font-family: Arial, sans-serif; margin: 0; background:#f4f4f4; }
 
-        /* ===== SIDEBAR ===== */
-        .sidebar {
-            width: 250px;
-            background: #8f0707;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding-top: 20px;
-            transition: width 0.3s ease;
-            color: white;
-            overflow: hidden;
-            z-index: 1030;
-        }
+/* ===== SIDEBAR ===== */
+.sidebar{
+    width:var(--sidebar-width); background:#8f0707; height:100vh;
+    position:fixed; left:0; top:0; padding-top:20px;
+    transition:.3s; color:white; overflow-y:auto; z-index:1030;
+}
+.sidebar.collapsed{ width:70px; }
 
-        .sidebar.collapsed {
-            width: 70px;
-        }
+.sidebar-header{text-align:center;margin-bottom:20px;}
+.menu-title{font-size:12px;padding:10px 20px;opacity:.7;}
 
-        .sidebar-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+.sidebar a{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 20px;color:white;text-decoration:none; white-space:nowrap;
+}
+.sidebar a:hover{ background:#8e0000; }
+.sidebar i{ min-width:20px;text-align:center; }
 
-        .sidebar-header h4 {
-            margin: 0;
-        }
+/* ===== HEADER ===== */
+.header{
+    height:60px;background:#b71c1c;color:white;
+    display:flex;align-items:center;padding:0 20px;
+    margin-left:250px;transition:.3s;
+}
+.header.collapsed{ margin-left:70px; }
 
-        .sidebar-header small {
-            opacity: 0.7;
-        }
+.content{
+    margin-left: 150px; padding:80px 20px 20px;
+    transition:.3s;min-height:100vh;
+}
+.content.collapsed{ margin-left: calc(70px - var(--collapsed-offset)); padding-top:80px; }
 
-        .menu-title {
-            font-size: 12px;
-            padding: 10px 20px;
-            opacity: 0.7;
-        }
+.table-container{overflow-x:auto;}
+table{
+    width:100%;background:white;border-radius:8px;
+    border-collapse:collapse;box-shadow:0 2px 6px rgba(0,0,0,.05);
+}
+th,td{padding:12px;font-size:14px;border-bottom:1px solid #eee;}
+th{background:#f1f3f5;text-transform:uppercase;font-size:13px;}
 
-        .sidebar.collapsed .menu-title {
-            display: none;
-        }
-
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            color: white;
-            text-decoration: none;
-            transition: 0.3s;
-            white-space: nowrap;
-        }
-
-        .sidebar a:hover {
-            background: #8e0000;
-        }
-
-        .sidebar i {
-            font-size: 18px;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed span {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        /* ===== HEADER ===== */
-        .header {
-            height: 60px;
-            background: #b71c1c;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            margin-left: 250px;
-            transition: margin-left 0.3s ease;
-            box-shadow: 0 2px 4px #ccc;
-            z-index: 1040;
-        }
-
-        .header.collapsed {
-            margin-left: 70px;
-        }
-
-        .toggle-btn {
-            cursor: pointer;
-            margin-right: 15px;
-            font-size: 1.2rem;
-        }
-
-        /* FIXED DROPDOWN - Higher z-index, no position: fixed */
-        .header .dropdown-menu {
-            z-index: 1070 !important;
-        }
-
-        .header .dropdown-toggle::after {
-            margin-left: 0.3rem;
-        }
-
-        /* ===== CONTENT ===== */
-        .content {
-            margin-left: 250px;
-            padding: 20px;
-            transition: margin-left 0.3s ease;
-            min-height: calc(100vh - 60px);
-        }
-
-        .content.collapsed {
-            margin-left: 70px;
-        }
-
-        /* ===== TABLES & MODALS ===== */
-        .btn {
-            padding: 6px 14px;
-            font-size: 13px;
-            border-radius: 5px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn.primary { background-color: #dc3545; color: #fff; }
-        .btn.primary:hover { background-color: #c82333; }
-        .btn.success { background-color: #198754; color: #fff; }
-        .btn.success:hover { background-color: #146c43; }
-        .btn.warning { background-color: #ffc107; color: #000; }
-        .btn.warning:hover { background-color: #e0a800; }
-        .btn.danger { background-color: #dc3545; color: #fff; }
-        .btn.danger:hover { background-color: #c82333; }
-        .btn.secondary { background-color: #6c757d; color: #fff; }
-        .btn.secondary:hover { background-color: #5a6268; }
-
-        .table-container { overflow-x: auto; padding: 0 0 20px 0; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            min-width: 800px;
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 14px;
-            color: #343a40;
-            border-bottom: 1px solid #e9ecef;
-        }
-        th { background-color: #f1f3f5; font-weight: 600; color: #495057; text-transform: uppercase; font-size: 13px; }
-        tr:nth-child(even) { background-color: #ffffff; }
-        tr:nth-child(odd) { background-color: #f8f9fa; }
-        td.actions { text-align: center; }
-
-        .modal-content { border-radius: 10px; }
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-    </style>
+.modal-content{border-radius:10px;}
+</style>
 </head>
 
 <body>
 
 <!-- ===== SIDEBAR ===== -->
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h4>DTS</h4>
-        <small>
-            {% if current_user.role == 'admin' %}
-                Office Admin
-            {% else %}
-                Office User
-            {% endif %}
-        </small>
-    </div>
 
-    {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('main.dashboard') }}"><i class="fa fa-home"></i><span>Dashboard</span></a>
-        <p class="menu-title">DOCUMENT OPERATIONS</p>
-        <a href="{{ url_for('main.add_document') }}"><i class="fa fa-plus"></i><span>New Document</span></a>
-        <a href="{{ url_for('main.documents') }}"><i class="fa fa-file"></i><span>View Documents</span></a>
-        <a href="{{ url_for('main.transfer_receive') }}"><i class="fa fa-envelope"></i><span>Transfer & Receive</span></a>
-        <a href="{{ url_for('main.trace') }}"><i class="fa fa-location-dot"></i><span>Trace</span></a>
-        <p class="menu-title">OFFICE MANAGEMENT</p>
-        <a href="{{ url_for('main.users') }}"><i class="fa fa-users"></i><span>Staff Members</span></a>
-    {% else %}
-        <a href="{{ url_for('main.dashboard') }}"><i class="fa fa-home"></i><span>Dashboard</span></a>
-        <p class="menu-title">DOCUMENT OPERATIONS</p>
-        <a href="{{ url_for('main.documents') }}"><i class="fa fa-file"></i><span>View Documents</span></a>
-        <a href="{{ url_for('main.trace') }}"><i class="fa fa-location-dot"></i><span>Trace</span></a>
-    {% endif %}
+<div class="sidebar-header">
+    <h4>DTS</h4>
+    <small>
+        {% if current_user.role == 'admin' %}
+            Office Admin
+        {% else %}
+            Office User
+        {% endif %}
+    </small>
+</div>
+
+<a href="{{ url_for('main.dashboard') }}">
+    <i class="fa fa-home"></i><span>Dashboard</span>
+</a>
+
+<p class="menu-title">DOCUMENT MANAGEMENT</p>
+
+<a href="{{ url_for('main.add_document') }}">
+    <i class="fa fa-plus"></i><span>New Document</span>
+</a>
+
+<a href="{{ url_for('main.incoming_documents') }}">
+    <i class="fa fa-inbox"></i><span>Incoming</span>
+</a>
+
+<a href="{{ url_for('main.outgoing_documents') }}">
+    <i class="fa fa-paper-plane"></i><span>Outgoing</span>
+</a>
+
+<a href="{{ url_for('main.processing_documents') }}">
+    <i class="fa fa-spinner"></i><span>Processing</span>
+</a>
+
+<a href="{{ url_for('main.archived_documents') }}">
+    <i class="fa fa-box-archive"></i><span>Archived / Closed</span>
+</a>
+
+<a href="{{ url_for('main.trace') }}">
+    <i class="fa fa-location-dot"></i><span>Trace</span>
+</a>
+
+<p class="menu-title">ANALYTICS</p>
+
+<a href="{{ url_for('main.analytics') }}">
+    <i class="fa fa-chart-line"></i><span>Bottleneck Analytics</span>
+</a>
+
+<a href="{{ url_for('main.reports') }}">
+    <i class="fa fa-file-alt"></i><span>Reports</span>
+</a>
+
+{% if current_user.role == 'admin' %}
+<p class="menu-title">OFFICE</p>
+
+<a href="{{ url_for('main.users') }}">
+    <i class="fa fa-users"></i><span>Staff Members</span>
+</a>
+
+<a href="{{ url_for('main.office_settings') }}">
+    <i class="fa fa-building"></i><span>Office Settings</span>
+</a>
+
+<a href="{{ url_for('main.activity_logs') }}">
+    <i class="fa fa-clipboard-list"></i><span>Activity Logs</span>
+</a>
+{% endif %}
+
 </div>
 
 <!-- ===== HEADER ===== -->
-<div class="header d-flex align-items-center justify-content-between px-3" id="header">
-    <!-- Sidebar toggle -->
-    <i class="fa fa-bars toggle-btn" onclick="toggleSidebar()" aria-expanded="true" aria-controls="sidebar" style="cursor: pointer;"></i>
+<div class="header d-flex justify-content-between" id="header">
+    <i class="fa fa-bars" onclick="toggleSidebar()" style="cursor:pointer"></i>
 
-    <!-- Page title -->
-    <h3 class="me-auto mb-0">
-        {% if current_user.role == 'admin' %}
-            Document Tracking System – {{ current_user.department }} Admin
-        {% else %}
-            Document Tracking System – {{ current_user.department }} User
-        {% endif %}
-    </h3>
+    <h5 class="mb-0">
+        DTS – {{ current_user.department }}
+    </h5>
 
-    <!-- User dropdown -->
     <div class="dropdown">
-        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle no-caret"
-           href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
-            <i class="fa fa-user-circle fa-lg me-2"></i>
-            {{ current_user.full_name }}
+        <a class="text-white dropdown-toggle"
+           data-bs-toggle="dropdown">
+            <i class="fa fa-user-circle"></i> {{ current_user.full_name }}
         </a>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                <i class="fa fa-key me-2"></i>Change Password
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                <i class="fa fa-sign-out-alt me-2"></i>Logout
-            </a></li>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item"
+                   data-bs-toggle="modal"
+                   data-bs-target="#changePasswordModal">
+                   Change Password
+                </a>
+            </li>
+            <li><hr></li>
+            <li>
+                <a class="dropdown-item"
+                   href="{{ url_for('auth.logout') }}">
+                   Logout
+                </a>
+            </li>
         </ul>
     </div>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
+<!-- ===== CONTENT ===== -->
 <div class="content" id="content">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    {% block content %}{% endblock %}
+{% block content %}{% endblock %}
 </div>
 
-<!-- ===== SINGLE PASSWORD MODAL (All users) ===== -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form method="POST" action="{{ url_for('auth.change_password') }}">
-        <div class="modal-header">
-          <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="currentPassword" class="form-label">Current Password</label>
-            <input type="password" class="form-control" id="currentPassword" name="current_password" placeholder="Enter current password" required>
-          </div>
-          <div class="mb-3">
-            <label for="newPassword" class="form-label">New Password</label>
-            <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Enter new password" required>
-          </div>
-          <div class="mb-3">
-            <label for="confirmPassword" class="form-label">Confirm New Password</label>
-            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder="Confirm new password" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update Password</button>
-        </div>
-      </form>
-    </div>
-  </div>
+<!-- ===== PASSWORD MODAL ===== -->
+<div class="modal fade" id="changePasswordModal">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content p-3">
+
+<form method="POST" action="{{ url_for('auth.change_password') }}">
+<h5>Change Password</h5>
+
+<input class="form-control mb-2" name="current_password" placeholder="Current Password" required>
+<input class="form-control mb-2" name="new_password" placeholder="New Password" required>
+<input class="form-control mb-3" name="confirm_password" placeholder="Confirm Password" required>
+
+<button class="btn btn-danger w-100">Update</button>
+</form>
+
+</div>
+</div>
 </div>
 
-<!-- ===== USERS MODAL (ADMIN ONLY) ===== -->
-<div id="userModal" class="modal fade" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="userModalTitle">Add User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="userForm" method="POST" action="{{ url_for('main.add_user') }}">
-                <input type="hidden" id="userId" name="id">
-                <input type="hidden" name="role" value="user">
-                <div class="modal-body">
-                    <div class="form-group mb-3">
-                        <label for="full_name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name" required>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label for="userEmail" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="userEmail" name="email" required>
-                    </div>
-                    <div class="form-group mb-3" id="passwordGroup">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                        <small class="text-muted d-block">Leave blank when editing to keep current password</small>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label for="userDepartment" class="form-label">Department</label>
-                        <select class="form-control" id="userDepartment" name="department">
-                            <option value="">-- Select Department --</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept.name }}">{{ dept.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- ===== SCRIPTS (Bootstrap LAST) ===== -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize sidebar toggle
-    window.toggleSidebar = function() {
-        const sidebar = document.getElementById("sidebar");
-        const header = document.getElementById("header");
-        const content = document.getElementById("content");
-        
-        sidebar.classList.toggle("collapsed");
-        header.classList.toggle("collapsed");
-        content.classList.toggle("collapsed");
-
-        const toggleBtn = document.querySelector('.toggle-btn');
-        toggleBtn.setAttribute('aria-expanded', !sidebar.classList.contains('collapsed'));
-    }
-
-    // Users modal functions (admin only)
-    window.openUserModal = function(userId = null) {
-        const modal = new bootstrap.Modal(document.getElementById('userModal'));
-        const form = document.getElementById('userForm');
-        const passwordGroup = document.getElementById('passwordGroup');
-        const title = document.getElementById('userModalTitle');
-        
-        modal.show();
-
-        if (!userId) {
-            title.textContent = 'Add User';
-            form.action = "{{ url_for('main.add_user') }}";
-            form.reset();
-            passwordGroup.style.display = 'block';
-            document.getElementById('userId').value = '';
-        } else {
-            title.textContent = 'Edit User';
-            const row = document.getElementById(`user-row-${userId}`);
-            document.getElementById('userId').value = userId;
-            document.getElementById('full_name').value = row.dataset.fullName;
-            document.getElementById('userEmail').value = row.dataset.email;
-            document.getElementById('userDepartment').value = row.dataset.department;
-
-            let editUrl = "{{ url_for('main.edit_user', id='0') }}";
-            form.action = editUrl.replace('0', userId);
-            passwordGroup.style.display = 'none';
-        }
-    }
-
-    window.closeUserModal = function() {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
-        if (modal) modal.hide();
-    }
-});
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("collapsed");
+    document.getElementById("header").classList.toggle("collapsed");
+    document.getElementById("content").classList.toggle("collapsed");
+}
 </script>
 
 </body>

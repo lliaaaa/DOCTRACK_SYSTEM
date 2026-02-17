@@ -1,0 +1,103 @@
+{% extends 'index.html' %}
+{% block content %}
+<style>
+.document-list { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-bar input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
+.search-bar button { padding: 8px 16px; background: #b71c1c; color: white; border: none; border-radius: 6px; cursor: pointer; }
+.table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+.table th { background: #f1f3f5; font-weight: 600; text-transform: uppercase; }
+.status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.status-processing { background: #cfe2ff; color: #084298; border: 1px solid #cfe2ff; }
+.action-btns { display: flex; gap: 5px; }
+.action-btns a, .action-btns button { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
+.btn-view { background: #0d6efd; color: white; }
+.btn-edit { background: #0dcaf0; color: white; }
+.btn-close { background: #dc3545; color: white; }
+.btn-small { padding: 4px 8px; font-size: 12px; }
+</style>
+
+<div class="content">
+  <h1 class="dashboard-title">Processing Documents</h1>
+  <p>Documents currently in process by {{ current_user.department }}.</p>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search by document ID or title..." />
+    <button onclick="filterTable()">Search</button>
+  </div>
+
+  <div class="document-list">
+    <table class="table" id="docTable">
+      <thead>
+        <tr>
+          <th>Document ID</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr data-doc-id="{{ r.id }}" data-search="{{ r.document_id|lower }} {{ r.title|lower }}">
+          <td><strong>{{ r.document_id }}</strong></td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.doc_type }}</td>
+          <td>{{ "₱ %.2f"|format(r.amount) if r.amount else "-" }}</td>
+          <td>
+            <span class="status-badge status-processing">{{ r.status }}</span>
+          </td>
+          <td>{{ r.updated_at.strftime('%Y-%m-%d %H:%M') if r.updated_at else '-' }}</td>
+          <td>
+            <div class="action-btns">
+              <a href="{{ url_for('main.document_detail', record_id=r.id) }}" class="btn-view btn-small">View</a>
+              {% if current_user.role == 'admin' %}
+              <a href="{{ url_for('main.edit_document', record_id=r.id) }}" class="btn-edit btn-small">Edit</a>
+              <button class="btn-close btn-small close-btn" data-record-id="{{ r.id }}">Close</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not records %}
+    <p style="text-align:center;color:#999;margin-top:20px;">No documents in processing.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function filterTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('#docTable tbody tr');
+  rows.forEach(row => {
+    const text = row.dataset.search || '';
+    row.style.display = text.includes(search) ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('.close-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    if (!confirm('Close this document?')) return;
+    const recordId = this.dataset.recordId;
+    try {
+      const res = await fetch(`{{ url_for('main.close_document', record_id=0) }}`.replace('0', recordId), { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('Document closed successfully.');
+        location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to close document.');
+    }
+  });
+});
+</script>
+
+{% endblock %}
+

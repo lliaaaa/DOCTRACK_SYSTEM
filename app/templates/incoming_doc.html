@@ -1,0 +1,101 @@
+{% extends 'index.html' %}
+{% block content %}
+<style>
+.document-list { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-bar input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
+.search-bar button { padding: 8px 16px; background: #b71c1c; color: white; border: none; border-radius: 6px; cursor: pointer; }
+.table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+.table th { background: #f1f3f5; font-weight: 600; text-transform: uppercase; }
+.status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.status-pending { background: #ffc10740; color: #856404; border: 1px solid #ffc107; }
+.status-approved { background: #d1e7dd; color: #0f5132; border: 1px solid #d1e7dd; }
+.action-btns { display: flex; gap: 5px; }
+.action-btns a, .action-btns button { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
+.btn-view { background: #0d6efd; color: white; }
+.btn-receive { background: #198754; color: white; }
+.btn-small { padding: 4px 8px; font-size: 12px; }
+</style>
+
+<div class="content">
+  <h1 class="dashboard-title">Incoming Documents</h1>
+  <p>Documents transferred to {{ current_user.department }}.</p>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search by document ID or title..." />
+    <button onclick="filterTable()">Search</button>
+  </div>
+
+  <div class="document-list">
+    <table class="table" id="docTable">
+      <thead>
+        <tr>
+          <th>Document ID</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>From</th>
+          <th>Status</th>
+          <th>Date Received</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr data-doc-id="{{ r.id }}" data-search="{{ r.document_id|lower }} {{ r.title|lower }}">
+          <td><strong>{{ r.document_id }}</strong></td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.doc_type }}</td>
+          <td>{{ r.implementing_office }}</td>
+          <td>
+            <span class="status-badge status-pending">{{ r.status }}</span>
+          </td>
+          <td>{{ r.date_received.strftime('%Y-%m-%d') if r.date_received else '-' }}</td>
+          <td>
+            <div class="action-btns">
+              <a href="{{ url_for('main.document_detail', record_id=r.id) }}" class="btn-view btn-small">View</a>
+              {% if current_user.role == 'admin' %}
+              <button class="btn-receive btn-small receive-btn" data-record-id="{{ r.id }}">Receive</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not records %}
+    <p style="text-align:center;color:#999;margin-top:20px;">No incoming documents.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function filterTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('#docTable tbody tr');
+  rows.forEach(row => {
+    const text = row.dataset.search || '';
+    row.style.display = text.includes(search) ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('.receive-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    if (!confirm('Confirm receipt of this document?')) return;
+    const recordId = this.dataset.recordId;
+    try {
+      const res = await fetch(`{{ url_for('main.receive_document', history_id=0) }}`.replace('0', recordId), { method: 'POST' });
+      if (res.ok) {
+        alert('Document received successfully.');
+        location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to receive document.');
+    }
+  });
+});
+</script>
+
+{% endblock %}
+

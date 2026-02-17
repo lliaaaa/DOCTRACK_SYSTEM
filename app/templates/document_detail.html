@@ -1,0 +1,45 @@
+{% extends 'index.html' %}
+{% block content %}
+<div class="content">
+  <h1 class="dashboard-title">Document Details</h1>
+  <div class="card p-3 mb-3">
+    <h4>{{ record.document_id }} — {{ record.title }}</h4>
+    <p>Type: {{ record.doc_type }} | Status: <strong>{{ record.status }}</strong></p>
+    <p>Implementing Office: {{ record.implementing_office }}</p>
+    <p>Date Received: {{ record.date_received }}</p>
+    <p>Released By: {{ record.released_by }} | Received By: {{ record.received_by }}</p>
+    <div class="mt-2">
+      {% if current_user.role == 'admin' %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('main.edit_document', record_id=record.id) }}">Edit</a>
+      <form method="POST" action="{{ url_for('main.delete_document', record_id=record.id) }}" class="d-inline" onsubmit="return confirm('Delete this document?')">
+        <button class="btn btn-danger btn-sm">Delete</button>
+      </form>
+      <button class="btn btn-secondary btn-sm" id="closeBtn">Close Document</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card p-3">
+    <h5>History</h5>
+    {% if record.history %}
+      <ul>
+      {% for h in record.history %}
+        <li>{{ h.timestamp }} — {{ h.action_type }} — {{ h.status }} — {% if h.from_department %}{{ h.from_department }} → {% endif %}{{ h.to_department }} ({{ h.action_by }})</li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>No history available.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.getElementById('closeBtn')?.addEventListener('click', async function(){
+  if(!confirm('Close this document?')) return;
+  const res = await fetch('{{ url_for('main.close_document', record_id=record.id) }}', { method: 'POST' });
+  const data = await res.json();
+  if(data.success) location.reload(); else alert('Failed to close');
+});
+</script>
+
+{% endblock %}

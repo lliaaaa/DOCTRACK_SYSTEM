@@ -90,6 +90,89 @@ def documents():
     return render_template("documents.html", records=records)
 
 
+@bp.route('/documents/<int:record_id>')
+@login_required
+def document_detail(record_id):
+    # ensure the current user can see this document
+    record = visible_documents(current_user.department).filter_by(id=record_id).first()
+    if not record:
+        return render_template('404.html'), 404
+
+    return render_template('document_detail.html', record=record)
+
+
+@bp.route('/documents/edit/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('admin')
+def edit_document(record_id):
+    record = Record.query.get_or_404(record_id)
+    if request.method == 'POST':
+        record.title = request.form.get('title', record.title)
+        record.doc_type = request.form.get('doc_type', record.doc_type)
+        record.department = request.form.get('department', record.department)
+        record.implementing_office = request.form.get('implementing_office', record.implementing_office)
+        amount = request.form.get('amount')
+        record.amount = float(amount) if amount else None
+        record.received_by = request.form.get('received_by', record.received_by)
+        record.status = request.form.get('status', record.status)
+        record.updated_at = datetime.now(timezone.utc)
+
+        # record an edit action in history
+        history = RecordHistory(
+            record_id=record.id,
+            action_type='edit',
+            from_department=current_user.department,
+            to_department=record.department,
+            action_by=current_user.full_name,
+            status=record.status,
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.session.add(history)
+        db.session.commit()
+
+        flash('Document updated successfully.', 'success')
+        return redirect(url_for('main.document_detail', record_id=record.id))
+
+    # GET: render edit form
+    departments = Department.query.all()
+    document_types = DocumentType.query.all()
+    document_statuses = DocumentStatus.query.all()
+    return render_template('document_edit.html', record=record, departments=departments, document_types=document_types, document_statuses=document_statuses)
+
+
+@bp.route('/documents/delete/<int:record_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def delete_document(record_id):
+    record = Record.query.get_or_404(record_id)
+    db.session.delete(record)
+    db.session.commit()
+    flash('Document deleted.', 'info')
+    return redirect(url_for('main.documents'))
+
+
+@bp.route('/documents/close/<int:record_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def close_document(record_id):
+    record = Record.query.get_or_404(record_id)
+    record.status = 'Closed'
+    record.updated_at = datetime.now(timezone.utc)
+
+    history = RecordHistory(
+        record_id=record.id,
+        action_type='close',
+        from_department=current_user.department,
+        to_department=record.department,
+        action_by=current_user.full_name,
+        status=record.status,
+        timestamp=datetime.now(timezone.utc)
+    )
+    db.session.add(history)
+    db.session.commit()
+    return jsonify(success=True)
+
+
 # =========================================================
 # USERS (ADMIN ONLY — SAME DEPARTMENT)
 # =========================================================
@@ -98,7 +181,7 @@ def documents():
 @role_required("admin")
 def users():
     users = User.query.filter_by(department=current_user.department).all()
-    return render_template("admin/users.html", users=users)
+    return render_template("users.html", users=users)
 
 
 @bp.route("/users/add", methods=["POST"])
@@ -228,10 +311,10 @@ def add_document():
         db.session.commit()
 
         flash("Document added successfully.", "success")
-        return redirect(url_for("main.documents"))
+        return redirect(url_for("main.incoming_documents"))
 
     return render_template(
-        "admin/add_document.html",
+        "admin/new_doc.html",
         users=users,
         document_type=document_type,
         document_status=document_status,
@@ -242,26 +325,155 @@ def add_document():
 # =========================================================
 # TRANSFER & RECEIVE
 # =========================================================
-@bp.route("/transfer_receive")
+@bp.route("/incoming")
 @login_required
-def transfer_receive():
-    dept = current_user.department
+def incoming_documents():
+    records = visible_documents(current_user.department)
+    return render_template("incoming_doc.html", records=records)
 
-    records = Record.query.filter_by(department=dept).all()
 
-    incoming_transfers = RecordHistory.query.filter_by(
-        to_department=dept,
-        action_type="transfer"
-    ).all()
+@bp.route("/outgoing")
+@login_required
+def outgoing_documents():
+    records = visible_documents(current_user.department)
+    return render_template("outgoing_doc.html", records=records)
 
-    departments = Department.query.all() if current_user.role == "admin" else []
+
+@bp.route("/processing")
+@login_required
+def processing_documents():
+    records = visible_documents(current_user.department)
+    return render_template("processing_doc.html", records=records)
+
+
+@bp.route("/archived")
+@login_required
+def archived_documents():
+    records = visible_documents(current_user.department).filter(Record.status == 'Closed')
+    return render_template("archived.html", records=records)
+
+
+@bp.route("/analytics")
+@login_required
+def analytics():
+    # Bottleneck analytics: compute average time spent per department
+    from collections import defaultdict
+    import statistics
+
+    dept_durations = defaultdict(list)
+
+    records = Record.query.options().all()
+    for record in records:
+        hist = sorted(record.history, key=lambda h: h.timestamp) if record.history else []
+        for i in range(len(hist) - 1):
+            cur = hist[i]
+            nxt = hist[i + 1]
+            if cur.to_department and cur.timestamp and nxt.timestamp:
+                delta = (nxt.timestamp - cur.timestamp).total_seconds()
+                if delta > 0:
+                    dept_durations[cur.to_department].append(delta)
+
+    # compute averages in hours
+    avg_hours = {}
+    for dept, secs in dept_durations.items():
+        avg_hours[dept] = (sum(secs) / len(secs)) / 3600.0
+
+    # overall stats
+    avg_values = list(avg_hours.values())
+    overall_mean = statistics.mean(avg_values) if avg_values else 0
+    overall_stdev = statistics.stdev(avg_values) if len(avg_values) > 1 else 0
+
+    # bottlenecks: depts with avg > mean + stdev
+    bottlenecks = [
+        {"department": d, "avg_hours": round(h, 2), "count": len(dept_durations[d])}
+        for d, h in avg_hours.items() if h > overall_mean + overall_stdev
+    ]
+
+    # Prepare chart data
+    labels = list(avg_hours.keys())
+    values = [round(v, 2) for v in avg_hours.values()]
+
+    # Simple ML: try to train a regressor to predict duration (hours) per department
+    ml_summary = None
+    ml_available = False
+    try:
+        import pandas as pd
+        from sklearn.model_selection import train_test_split
+        from sklearn.ensemble import RandomForestRegressor
+    except Exception:
+        ml_summary = "Install pandas and scikit-learn to enable ML analytics"
+    else:
+        # Build dataset from history durations (same as above but per transition)
+        rows = []
+        for record in records:
+            hist = sorted(record.history, key=lambda h: h.timestamp) if record.history else []
+            for i in range(len(hist) - 1):
+                cur = hist[i]
+                nxt = hist[i + 1]
+                if cur.to_department and cur.timestamp and nxt.timestamp:
+                    delta_hours = (nxt.timestamp - cur.timestamp).total_seconds() / 3600.0
+                    rows.append({
+                        "doc_type": record.doc_type,
+                        "department": cur.to_department,
+                        "amount": record.amount or 0.0,
+                        "duration": delta_hours
+                    })
+
+        if len(rows) >= 30:
+            df = pd.DataFrame(rows)
+            # one-hot encode categorical features
+            X = pd.get_dummies(df[["doc_type", "department"]].astype(str))
+            X["amount"] = df["amount"]
+            y = df["duration"]
+
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            model = RandomForestRegressor(n_estimators=50, random_state=42)
+            model.fit(X_train, y_train)
+            score = model.score(X_test, y_test)
+
+            # feature importances (map back)
+            importances = dict(zip(X.columns, model.feature_importances_))
+            top_features = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:10]
+
+            ml_summary = {
+                "r2": round(float(score), 3),
+                "top_features": [(k, round(float(v), 4)) for k, v in top_features]
+            }
+            ml_available = True
+        else:
+            ml_summary = "Not enough history rows (need >=30) to train ML model"
 
     return render_template(
-        "admin/transfer_receive.html",
-        records=records,
-        incoming_transfers=incoming_transfers,
-        departments=departments
+        "analytics.html",
+        labels=labels,
+        values=values,
+        bottlenecks=bottlenecks,
+        overall_mean=round(overall_mean, 2),
+        overall_stdev=round(overall_stdev, 2),
+        ml_summary=ml_summary,
+        ml_available=ml_available
     )
+
+
+@bp.route("/reports")
+@login_required
+def reports():
+    return render_template("reports.html")
+
+
+@bp.route("/office_settings")
+@login_required
+@role_required("admin")
+def office_settings():
+    return render_template("office_settings.html")
+
+
+@bp.route("/activity_logs")
+@login_required
+@role_required("admin")
+def activity_logs():
+    records = RecordHistory.query.order_by(RecordHistory.timestamp.desc()).all()
+    return render_template("logs.html", records=records)
 
 @bp.route("/documents/transfer/<int:record_id>", methods=["POST"])
 @login_required
@@ -336,7 +548,7 @@ def trace():
             .first()
 
     return render_template(
-        "tracking.html",
+        "trace.html",
         documents=documents,
         tracked_doc=tracked_doc
     )

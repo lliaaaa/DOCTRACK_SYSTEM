@@ -1,0 +1,46 @@
+{% extends 'index.html' %}
+{% block content %}
+<div class="content">
+  <h1 class="dashboard-title">Edit Document</h1>
+  <form method="POST" action="{{ url_for('main.edit_document', record_id=record.id) }}">
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      <input class="form-control" name="title" value="{{ record.title }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Document Type</label>
+      <select name="doc_type" class="form-select">
+        {% for dt in document_types %}
+        <option value="{{ dt.name }}" {% if dt.name == record.doc_type %}selected{% endif %}>{{ dt.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Implementing Office</label>
+      <select name="implementing_office" class="form-select">
+        {% for d in departments %}
+        <option value="{{ d.name }}" {% if d.name == record.implementing_office %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Amount</label>
+      <input class="form-control" name="amount" value="{{ record.amount or '' }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Received By</label>
+      <input class="form-control" name="received_by" value="{{ record.received_by }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        {% for s in document_statuses %}
+        <option value="{{ s.name }}" {% if s.name == record.status %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-secondary" href="{{ url_for('main.document_detail', record_id=record.id) }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

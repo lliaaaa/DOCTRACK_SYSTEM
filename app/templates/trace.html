@@ -1,0 +1,80 @@
+{% extends 'index.html' %}
+{% block content %}
+<style>
+.search-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-container input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
+.search-container button { padding: 8px 16px; background: #b71c1c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.doc-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 2px solid #b71c1c; padding-bottom: 10px; }
+.doc-info { flex: 1; }
+.doc-id { font-size: 18px; font-weight: 700; color: #b71c1c; }
+.doc-title { font-size: 16px; font-weight: 600; color: #333; margin: 5px 0; }
+.doc-meta { font-size: 13px; color: #666; margin: 3px 0; }
+.btn { padding: 8px 12px; font-size: 13px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600; }
+.btn-detail { background: #0d6efd; color: white; }
+.btn-detail:hover { background: #0a58ca; }
+.timeline { margin-top: 15px; position: relative; padding-left: 25px; }
+.timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #e0e0e0; }
+.timeline-item { position: relative; margin-bottom: 12px; padding-left: 15px; }
+.timeline-item::before { content: ''; position: absolute; left: -10.5px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: #b71c1c; }
+.timeline-label { font-weight: 600; color: #2c3e50; font-size: 13px; }
+.timeline-details { font-size: 12px; color: #555; margin-top: 2px; }
+.timeline-date { font-size: 11px; color: #7f8c8d; margin-top: 4px; }
+.no-results { text-align: center; color: #999; padding: 40px 20px; font-size: 16px; }
+</style>
+
+<div class="content">
+  <h1 class="dashboard-title">Trace Documents</h1>
+  <p>Search for documents and view their complete tracking history.</p>
+
+  <form class="search-container" method="GET" action="{{ url_for('main.trace') }}">
+    <input type="text" name="q" placeholder="Enter Document ID or Title..." value="{{ request.args.get('q', '') }}" />
+    <button type="submit">Search</button>
+  </form>
+
+  {% if documents %}
+  <h3 style="margin-top:20px; margin-bottom:15px;">Search Results ({{ documents|length }} found)</h3>
+  {% for doc in documents %}
+  <div class="doc-card">
+    <div class="doc-header">
+      <div class="doc-info">
+        <div class="doc-id">{{ doc.document_id }}</div>
+        <div class="doc-title">{{ doc.title }}</div>
+        <div class="doc-meta">Type: {{ doc.doc_type }} | Department: {{ doc.department }}</div>
+        <div class="doc-meta">Status: <strong>{{ doc.status }}</strong> | Amount: {{ "₱ %.2f"|format(doc.amount) if doc.amount else "-" }}</div>
+      </div>
+      <a href="{{ url_for('main.document_detail', record_id=doc.id) }}" class="btn btn-detail">View Details</a>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if tracked_doc %}
+  <div class="doc-card">
+    <h4 style="margin-bottom: 15px; border-bottom: 2px solid #b71c1c; padding-bottom: 10px;">Full Tracking History</h4>
+    {% if tracked_doc.history %}
+    <div class="timeline">
+      {% for h in tracked_doc.history|sort(attribute='timestamp') %}
+      <div class="timeline-item">
+        <div class="timeline-label">{{ h.action_type|upper }} → {{ h.status }}</div>
+        <div class="timeline-details">
+          {% if h.from_department %}From: <strong>{{ h.from_department }}</strong> {% endif %}
+          {% if h.to_department %}To: <strong>{{ h.to_department }}</strong> {% endif %}
+          {% if h.action_by %}| By: {{ h.action_by }} {% endif %}
+        </div>
+        <div class="timeline-date">{{ h.timestamp.strftime('%Y-%m-%d %H:%M:%S') if h.timestamp and h.timestamp is not string else h.timestamp }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p>No tracking history available.</p>
+    {% endif %}
+  </div>
+  {% elif request.args.get('q') %}
+  <div class="no-results">No matching documents found. Try searching with a different term.</div>
+  {% else %}
+  <div class="no-results">Enter a Document ID or Title to search.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
