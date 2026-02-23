@@ -61,7 +61,12 @@
           <td>
             {% if u.role != 'admin' or u.is_temp_admin %}
             <div class="action-btns">
-              <button class="btn-edit-s" onclick="openEditModal('{{ u.id }}', '{{ u.full_name }}', '{{ u.email }}', {{ 'true' if u.is_temp_admin else 'false' }})">Edit</button>
+              <button class="btn-edit-s" 
+              data-id="{{ u.id }}"
+              data-name="{{ u.full_name }}"
+              data-email="{{ u.email }}"
+              data-tempadmin="{{ 'true' if u.is_temp_admin else 'false' }}"
+              onclick="openEditModal(this)">Edit</button>
               {% if not u.is_temp_admin %}
               <form method="POST" action="{{ url_for('main.toggle_user', id=u.id) }}" style="display:inline">
                 <button class="btn-deactivate" type="submit">{{ 'Activate' if u.is_deactivated else 'Deactivate' }}</button>
@@ -154,11 +159,11 @@
 </div>
 
 <script>
-function openEditModal(userId, fullName, email, isTempAdmin) {
-  document.getElementById('editFullName').value = fullName;
-  document.getElementById('editEmail').value = email;
-  document.getElementById('giveAdminCheck').checked = isTempAdmin;
-  document.getElementById('editForm').action = `/admin/users/edit/${userId}`;
+function openEditModal(btn) {
+  document.getElementById('editFullName').value = btn.dataset.name;
+  document.getElementById('editEmail').value = btn.dataset.email;
+  document.getElementById('giveAdminCheck').checked = btn.dataset.tempadmin === 'true';
+  document.getElementById('editForm').action = `/admin/users/edit/${btn.dataset.id}`;
   document.getElementById('editModal').style.display = 'flex';
 }
 </script>
