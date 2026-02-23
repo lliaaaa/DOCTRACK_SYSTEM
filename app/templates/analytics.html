@@ -69,8 +69,8 @@ canvas { max-width: 100%; }
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const labels = {{ labels|tojson }};
-const values = {{ values|tojson }};
+const labels = JSON.parse('{{ labels|tojson }}');
+const values = JSON.parse('{{ values|tojson }}');
 
 if (labels && labels.length > 0 && values && values.length > 0) {
   const ctx = document.getElementById('avgChart');

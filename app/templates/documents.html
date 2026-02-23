@@ -1,200 +1,67 @@
 {% extends 'index.html' %}
-
 {% block content %}
-<style>
-.content {
-    padding: 20px;
-    font-family: Arial, sans-serif;
-}
-
-.content.collapsed { }
-
-/* CONTROLS */
-.controls-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-.controls-container input, 
-.controls-container select {
-    padding: 6px 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-/* DOCUMENT TABLE */
-.document-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-.document-table th, .document-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-}
-.document-table th {
-    font-weight: bold;
-    color: #555;
-    text-transform: uppercase;
-}
-
-.status-badge {
-    padding: 4px 8px;
-    font-size: 12px;
-    border-radius: 4px;
-    font-weight: 600;
-    display: inline-block;
-}
-
-.status-badge.closed {
-    background: #6c757d20;
-    border: 1px solid #6c757d;
-    color: #6c757d;
-}
-.status-badge.completed {
-    background: #19875420;
-    border: 1px solid #198754;
-    color: #198754;
-}
-.status-badge.inprocess {
-    background: #ffc10720;
-    border: 1px solid #ffc107;
-    color: #856404;
-}
-
-/* ACTION BUTTON */
-.close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-.close-btn i {
-    font-size: 20px;
-    color: #dc3545;
-}
-.close-btn i:hover {
-    color: #a71d2a;
-}
-</style>
-
 <div class="content">
-
-    <h1 class="page-title">Documents</h1>
-    <p>Tracking documents for <strong>{{ current_user.department }}</strong></p>
-
-    <!-- FILTERS -->
-    <div class="controls-container">
-        <input type="search" id="searchInput" placeholder="Search document number or title..." oninput="renderTable()">
-        <select id="filterStatus" onchange="renderTable()">
-            <option value="">All Status</option>
-            <option value="closed">Closed</option>
-            <option value="completed">Completed</option>
-            <option value="inprocess">In Process</option>
-        </select>
+  <div class="d-flex justify-content-between align-items-start mb-4" style="border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <div>
+      <h1 class="dashboard-title">All Documents</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Document registry for <strong>{{ current_user.department }}</strong></div>
     </div>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('main.add_document') }}" class="btn-gov"><i class="fa fa-file-circle-plus me-1"></i>New Document</a>
+    {% endif %}
+  </div>
 
-    <!-- DOCUMENT TABLE -->
-    <div class="table-wrapper">
-        <table class="document-table">
-            <thead>
-                <tr>
-                    <th>Document No.</th>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Date Received</th>
-                    <th>Current Office</th>
-                    <th>Status</th>
-                    <th>Last Updated</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in records %}
-                <tr data-doc-id="{{ record.id }}">
-                    <td>{{ record.document_id }}</td>
-                    <td>{{ record.title }}</td>
-                    <td>{{ record.doc_type }}</td>
-                    <td>{{ record.date_received.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ record.department }}</td>
+  <!-- FILTERS -->
+  <div class="gov-card" style="padding:14px 18px;margin-bottom:16px;">
+    <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+      <div style="flex:1;min-width:200px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by Doc ID or title..." class="form-control" style="font-size:13px;">
+      </div>
+      <select name="status" class="form-select" style="max-width:180px;font-size:13px;">
+        <option value="">All Statuses</option>
+        <option value="inprocess" {% if status_filter == 'inprocess' %}selected{% endif %}>In Process</option>
+        <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+      </select>
+      <button type="submit" class="btn-gov"><i class="fa fa-magnifying-glass me-1"></i>Search</button>
+      {% if q or status_filter %}
+      <a href="{{ url_for('main.documents') }}" class="btn-gov-outline"><i class="fa fa-xmark me-1"></i>Clear</a>
+      {% endif %}
+    </form>
+  </div>
 
-                    <!-- STATUS -->
-                    <td class="status-cell">
-                        {% if record.status == 'Closed' %}
-                            <span class="status-badge closed">Closed</span>
-                        {% elif 'With Checked' in record.status %}
-                            <span class="status-badge completed">Completed</span>
-                        {% else %}
-                            <span class="status-badge inprocess">In Process</span>
-                        {% endif %}
-                    </td>
-
-                    <td>{{ record.created_at.strftime("%Y-%m-%d %I:%M %p") }}</td>
-
-                    <!-- ACTIONS -->
-                    <td class="text-center">
-                        {% if current_user.role == 'admin' and record.department == current_user.department %}
-                            {% if record.status != 'Closed' %}
-                                <button class="close-btn close-btn-js" data-id="{{ record.id }}" title="Close Document">
-                                    <i class="fa fa-times"></i>
-                                </button>
-                            {% else %}
-                                <span class="badge bg-secondary">Closed</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <div class="gov-card" style="padding:0;">
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Doc ID</th><th>Title</th><th>Type</th><th>Priority</th>
+          <th>Department</th><th>Status</th><th>Date In</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td><span class="doc-id">{{ record.document_id }}</span></td>
+          <td style="font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ record.title }}</td>
+          <td style="font-size:12px;">{{ record.doc_type }}</td>
+          <td><span class="p-{{ (record.priority or 'normal')|lower }}">{{ record.priority or 'Normal' }}</span></td>
+          <td style="font-size:12px;">{{ record.department }}</td>
+          <td>
+            {% if record.status == 'Closed' %}<span class="status-badge s-closed">Closed</span>
+            {% else %}<span class="status-badge s-process">{{ record.status }}</span>{% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--muted);">{{ record.created_at.strftime('%b %d, %Y') if record.created_at else '-' }}</td>
+          <td><a href="{{ url_for('main.document_detail', record_id=record.id) }}" class="btn-sm-action ba-view"><i class="fa fa-eye me-1"></i>View</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;font-size:13px;"><i class="fa fa-folder-open fa-lg mb-2 d-block"></i>No documents found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
     </div>
-
+    <div style="padding:10px 14px;font-size:11px;color:var(--muted);border-top:1px solid #F0EDE8;">
+      Showing {{ records|length }} document{{ 's' if records|length != 1 else '' }}
+    </div>
+  </div>
 </div>
-
-<script>
-function renderTable() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('filterStatus').value;
-    const rows = document.querySelectorAll('.document-table tbody tr');
-
-    rows.forEach(row => {
-        const docNo = row.children[0].textContent.toLowerCase();
-        const title = row.children[1].textContent.toLowerCase();
-        const statusText = row.querySelector('.status-cell').textContent.toLowerCase();
-
-        let statusMatch = true;
-        if (statusFilter === 'closed') statusMatch = statusText.includes('closed');
-        else if (statusFilter === 'completed') statusMatch = statusText.includes('completed');
-        else if (statusFilter === 'inprocess') statusMatch = !statusText.includes('closed') && !statusText.includes('completed');
-
-        const searchMatch = docNo.includes(search) || title.includes(search);
-
-        row.style.display = (searchMatch && statusMatch) ? '' : 'none';
-    });
-}
-
-/* CLOSE DOCUMENT (ADMIN ONLY) */
-document.querySelectorAll('.close-btn-js').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const docId = btn.dataset.id;
-        if (!confirm('Are you sure you want to close this document?')) return;
-
-        try {
-            const res = await fetch(`/documents/close/${docId}`, { method: 'POST' });
-            const data = await res.json();
-
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.error || 'Failed to close document');
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Failed to close document.");
-        }
-    });
-});
-</script>
-
 {% endblock %}

@@ -1,74 +1,89 @@
 {% extends 'index.html' %}
 {% block content %}
 <style>
-.settings-container { background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 600px; }
-.settings-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-.settings-section h3 { margin-top: 0; color: #333; }
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #374151; }
-.form-group input, .form-group select { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-.form-group input:focus, .form-group select:focus { outline: none; border-color: #b71c1c; box-shadow: 0 0 0 2px rgba(183,28,28,0.1); }
-.btn-save { background: #b71c1c; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.btn-save:hover { background: #8f0707; }
-.alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; }
-.alert-info { background: #cfe2ff; color: #084298; border: 1px solid #cfe2ff; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:768px){ .settings-grid { grid-template-columns: 1fr; } }
+.settings-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
+.settings-card h4 { font-size: 15px; font-weight: 700; color: #b71c1c; border-bottom: 2px solid #b71c1c; padding-bottom: 8px; margin-bottom: 16px; }
+.item-list { list-style: none; padding: 0; margin: 0 0 14px; }
+.item-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+.item-list li:nth-child(odd) { background: #f9f9f9; }
+.item-list li span { color: #333; }
+.btn-del { background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px; padding: 0 4px; }
+.btn-del:hover { color: #a00; }
+.add-form { display: flex; gap: 8px; }
+.add-form input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
+.add-form button { background: #b71c1c; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.add-form button:hover { background: #8f0707; }
+.info-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,.05); margin-bottom: 20px; }
+.info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { font-weight: 600; color: #555; }
+.info-value { color: #222; }
 </style>
 
 <div class="content">
   <h1 class="dashboard-title">Office Settings</h1>
-  <p>Configure office details and document tracking settings.</p>
+  <p style="color:#666;margin-bottom:20px;">Manage document types, statuses, and view office information for <strong>{{ current_user.department }}</strong>.</p>
 
-  <div class="settings-container">
-    <div class="alert alert-info">
-      Settings are per-office. Changes here affect all staff in <strong>{{ current_user.department }}</strong>.
+  <!-- Office Info -->
+  <div class="info-card">
+    <h4 style="font-size:15px;font-weight:700;color:#333;margin-bottom:12px;">📋 Office Information</h4>
+    <div class="info-row"><span class="info-label">Office / Department</span><span class="info-value">{{ current_user.department }}</span></div>
+    <div class="info-row"><span class="info-label">Admin</span><span class="info-value">{{ current_user.full_name }}</span></div>
+    <div class="info-row"><span class="info-label">Total Staff</span><span class="info-value">{{ staff_count }} member{{ 's' if staff_count != 1 else '' }}</span></div>
+  </div>
+
+  <div class="settings-grid">
+    <!-- DOCUMENT TYPES -->
+    <div class="settings-card">
+      <h4>📄 Document Types</h4>
+      <ul class="item-list">
+        {% for dt in doc_types %}
+        <li>
+          <span>{{ dt.name }}</span>
+          <form method="POST" action="{{ url_for('main.office_settings') }}" style="display:inline"
+                onsubmit="return confirm('Delete this document type?')">
+            <input type="hidden" name="action" value="delete_doc_type">
+            <input type="hidden" name="id" value="{{ dt.id }}">
+            <button type="submit" class="btn-del" title="Delete">✕</button>
+          </form>
+        </li>
+        {% else %}
+        <li><span style="color:#999;">No document types defined.</span></li>
+        {% endfor %}
+      </ul>
+      <form method="POST" action="{{ url_for('main.office_settings') }}" class="add-form">
+        <input type="hidden" name="action" value="add_doc_type">
+        <input type="text" name="name" placeholder="New document type..." required>
+        <button type="submit"><i class="fa fa-plus me-1"></i>Add</button>
+      </form>
     </div>
 
-    <div class="settings-section">
-      <h3>Office Information</h3>
-      <div class="form-group">
-        <label>Office Name</label>
-        <input type="text" value="{{ current_user.department }}" readonly />
-      </div>
-      <div class="form-group">
-        <label>Staff Count</label>
-        <input type="number" value="12" readonly />
-      </div>
+    <!-- DOCUMENT STATUSES -->
+    <div class="settings-card">
+      <h4>🔖 Document Statuses</h4>
+      <ul class="item-list">
+        {% for ds in doc_statuses %}
+        <li>
+          <span>{{ ds.name }}</span>
+          <form method="POST" action="{{ url_for('main.office_settings') }}" style="display:inline"
+                onsubmit="return confirm('Delete this status?')">
+            <input type="hidden" name="action" value="delete_status">
+            <input type="hidden" name="id" value="{{ ds.id }}">
+            <button type="submit" class="btn-del" title="Delete">✕</button>
+          </form>
+        </li>
+        {% else %}
+        <li><span style="color:#999;">No statuses defined.</span></li>
+        {% endfor %}
+      </ul>
+      <form method="POST" action="{{ url_for('main.office_settings') }}" class="add-form">
+        <input type="hidden" name="action" value="add_status">
+        <input type="text" name="name" placeholder="New status..." required>
+        <button type="submit"><i class="fa fa-plus me-1"></i>Add</button>
+      </form>
     </div>
-
-    <div class="settings-section">
-      <h3>Document Tracking</h3>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" checked /> Auto-notify when documents arrive
-        </label>
-      </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" checked /> Enable document signatures
-        </label>
-      </div>
-      <div class="form-group">
-        <label>Average Processing Time (hours)</label>
-        <input type="number" value="24" min="1" />
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>Notifications</h3>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" checked /> Email alerts on document transfer
-        </label>
-      </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" /> Daily summary report
-        </label>
-      </div>
-    </div>
-
-    <button class="btn-save">Save Settings</button>
   </div>
 </div>
-
 {% endblock %}

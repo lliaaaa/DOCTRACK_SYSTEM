@@ -1,95 +1,93 @@
 {% extends 'index.html' %}
 {% block content %}
-
-<style>
-/* Use global layout; avoid overriding margins */
-.content { padding: 20px; background: #f4f4f4; font-family: Arial, sans-serif; }
-.mb-3 { margin-bottom: 15px !important; }
-.form-label { font-weight: 600; color: #374151; }
-.form-control, .form-select { border-radius: 8px; border: 1px solid #d1d5db; height: 45px; padding: 8px 12px; width:100%; box-sizing:border-box; }
-.btn-submit { background-color: #9c0b19; color:#fff; font-weight:600; border-radius:8px; padding:12px 0; width:100%; }
-</style>
-
-<div class="content" id="content">
-  <h1 class="dashboard-title">Add New Document</h1>
-  <p class="greeting-text">Welcome to Admin Portal Dashboard</p>
-
-  <form method="POST" action="{{ url_for('main.add_document') }}">
-	  <div class="mb-3">
-		  <label for="title" class="form-label">Title</label>
-		  <input type="text" class="form-control" id="title" name="title" required placeholder="Enter document title">
-	  </div>
-
-	  <div class="row-cols">
-		  <div class="col-half mb-3">
-			  <label for="doc_type" class="form-label">Document Type</label>
-			  <select class="form-select" id="doc_type" name="doc_type" required>
-				  <option value="" selected disabled>Select Type</option>
-				  {% for dt in document_type %}
-				  <option value="{{ dt.name }}">{{ dt.name }}</option>
-				  {% endfor %}
-			  </select>
-		  </div>
-
-		  <div class="col-half mb-3" id="amount-wrapper" style="display:none;">
-			<label for="amount" class="form-label">Amount (Optional)</label>
-			<input type="number" class="form-control" id="amount" name="amount" placeholder="0.00">
-		</div>
-
-		  <div class="col-half mb-3">
-			  <label class="form-label">Implementing Office</label>
-			  <input type="text" class="form-control" value="{{ current_user.department }}" readonly>
-			  <input type="hidden" name="implementing_office" value="{{ current_user.department }}">
-		  </div>
-
-		  <div class="col-half mb-3">
-			  <label for="released_by" class="form-label">Released By</label>
-			  <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
-			  <input type="hidden" name="released_by" value="{{ current_user.full_name }}">
-		  </div>
-	  </div>
-
-	  <div class="row-cols">
-		<div class="col-half mb-3">
-			<label for="received_by" class="form-label">Received By</label>
-			<select class="form-select" id="received_by" name="received_by" required>
-				<option value="" selected disabled>Select Employee</option>
-				{% for user in users %}
-					{% if user.role != "Admin" %}
-					<option value="{{ user.full_name }}">{{ user.full_name }}</option>
-					{% endif %}
-				{% endfor %}
-			</select>
-		</div>
-
-		<div class="col-half mb-3">
-			<label for="status" class="form-label">Status</label>
-			<select class="form-select" id="status" name="status" required>
-				<option value="" selected disabled>Select Status</option>
-				{% for stat in document_status %}
-					<option value="{{ stat.name }}">{{ stat.name }}</option>
-				{% endfor %}
-			</select>
-		</div>
-	  </div>
-
-	  <button type="submit" class="btn-submit">Add Document</button>
-  </form>
+<div class="content">
+  <div class="d-flex justify-content-between align-items-center mb-3" style="border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <div>
+      <h1 class="dashboard-title">Register New Document</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Complete all required fields to create a new document record.</div>
+    </div>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="ci"><i class="fa-solid fa-file-circle-plus"></i></div>
+        <h3>Document Information</h3>
+      </div>
+      <form method="POST" action="{{ url_for('main.add_document') }}">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Document Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="title" required placeholder="Enter full document title">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Document Type <span class="text-danger">*</span></label>
+            <select class="form-select" name="doc_type" id="docTypeSelect" required>
+              <option value="" selected disabled>Select type...</option>
+              {% for dt in document_type %}
+              <option value="{{ dt.name }}">{{ dt.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6" id="amountWrap" style="display:none;">
+            <label class="form-label">Amount (₱)</label>
+            <input type="number" class="form-control" name="amount" id="amountInput" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Priority Level <span class="text-danger">*</span></label>
+            <select class="form-select" name="priority" required>
+              <option value="Normal" selected>🟢 Normal</option>
+              <option value="Urgent">🔴 Urgent</option>
+              <option value="Routine">🟠 Routine</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Implementing Office</label>
+            <input type="text" class="form-control" value="{{ current_user.department }}" readonly>
+            <input type="hidden" name="implementing_office" value="{{ current_user.department }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Released By</label>
+            <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Received By <span class="text-danger">*</span></label>
+            <select class="form-select" name="received_by" required>
+              <option value="" disabled selected>Select staff member...</option>
+              {% for user in users %}
+                {% if user.id == current_user.id %}
+                  {# Admin shown once with (you) label #}
+                  <option value="{{ user.full_name }}" selected>{{ user.full_name }} (you)</option>
+                {% else %}
+                  <option value="{{ user.full_name }}">{{ user.full_name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Remarks <span class="text-muted fw-normal" style="font-size:11px;">(optional)</span></label>
+            <textarea class="form-control" name="remarks" rows="2" placeholder="Additional notes or instructions..."></textarea>
+          </div>
+          <div class="col-12" style="background:#FEF9EC;border:1px solid #F5D86A;border-radius:6px;padding:10px 12px;font-size:12px;color:#7A5700;">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            Date In is set automatically when the document is created.
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn-gov"><i class="fa fa-plus me-1"></i>Register Document</button>
+          <a href="{{ url_for('main.documents') }}" class="btn-gov-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+    </div>
+  </div>
 </div>
-
 <script>
-const monetaryTypes = ["SVP","Bidding","Reimbursement of Diesel","Reimbursement of Tarpaulin","Burial Assistance","T.E.V"];
-const statusMap = {};
-const docTypeSelect = document.getElementById('doc_type');
-const amountWrapper = document.getElementById('amount-wrapper');
-const statusSelect = document.getElementById('status');
-if(docTypeSelect){
-  docTypeSelect.addEventListener('change', function(){
-	const selectedType = this.value;
-	if (monetaryTypes.includes(selectedType)) amountWrapper.style.display = 'block'; else { amountWrapper.style.display = 'none'; }
-	statusSelect.innerHTML = '<option value="" selected disabled>Select Status</option>';
-  });
-}
+const monetaryTypes = ["SVP","Bidding","Reimbursement of Diesel","Reimbursement of Tarpaulin","Burial Assistance","T.E.V","Purchase Request"];
+document.getElementById('docTypeSelect').addEventListener('change', function() {
+  const wrap = document.getElementById('amountWrap');
+  wrap.style.display = monetaryTypes.includes(this.value) ? 'block' : 'none';
+  if (!monetaryTypes.includes(this.value)) document.getElementById('amountInput').value = '';
+});
 </script>
-
 {% endblock %}

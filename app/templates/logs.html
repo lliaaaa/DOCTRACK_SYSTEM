@@ -1,77 +1,83 @@
 {% extends 'index.html' %}
 {% block content %}
-<style>
-.log-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.log-filters { display: flex; gap: 10px; margin-bottom: 20px; }
-.log-filters select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-.log-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-.log-table th, .log-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
-.log-table th { background: #f1f3f5; font-weight: 600; text-transform: uppercase; }
-.log-table tr:hover { background: #f9f9f9; }
-.action-badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
-.action-create { background: #d1e7dd; color: #0f5132; }
-.action-edit { background: #cfe2ff; color: #084298; }
-.action-delete { background: #f8d7da; color: #842029; }
-.action-transfer { background: #fff3cd; color: #664d03; }
-.action-close { background: #e2e3e5; color: #383d41; }
-</style>
-
 <div class="content">
-  <h1 class="dashboard-title">Activity Logs</h1>
-  <p>System activity audit trail for {{ current_user.department }}.</p>
-
-  <div class="log-filters">
-    <select id="actionFilter" onchange="filterLogs()">
-      <option value="">All Actions</option>
-      <option value="create">Create</option>
-      <option value="edit">Edit</option>
-      <option value="delete">Delete</option>
-      <option value="transfer">Transfer</option>
-      <option value="close">Close</option>
-    </select>
+  <div style="margin-bottom:20px;border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <h1 class="dashboard-title">Activity Logs</h1>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">Audit trail for <strong>{{ current_user.department }}</strong></div>
   </div>
 
-  <div class="log-container">
-    <table class="log-table" id="logTable">
+  <div class="gov-card" style="padding:14px 18px;margin-bottom:16px;">
+    <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+      <select name="action" class="form-select" style="max-width:180px;font-size:13px;" onchange="this.form.submit()">
+        <option value="">All Actions</option>
+        <option value="create" {% if action_filter=='create' %}selected{% endif %}>Create</option>
+        <option value="edit" {% if action_filter=='edit' %}selected{% endif %}>Edit</option>
+        <option value="transfer" {% if action_filter=='transfer' %}selected{% endif %}>Transfer</option>
+        <option value="received" {% if action_filter=='received' %}selected{% endif %}>Received</option>
+        <option value="close" {% if action_filter=='close' %}selected{% endif %}>Close</option>
+      </select>
+      <input type="text" id="logSearch" placeholder="Search by document, user..." oninput="filterLogs()" class="form-control" style="max-width:260px;font-size:13px;">
+      {% if action_filter %}
+      <a href="{{ url_for('main.activity_logs') }}" class="btn-gov-outline"><i class="fa fa-xmark me-1"></i>Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="gov-card" style="padding:0;">
+    <div style="overflow-x:auto;">
+    <table id="logTable">
       <thead>
-        <tr>
-          <th>Timestamp</th>
-          <th>Action</th>
-          <th>Document</th>
-          <th>Department</th>
-          <th>User</th>
-          <th>Status</th>
-        </tr>
+        <tr><th>Timestamp</th><th>Action</th><th>Document</th><th>From → To</th><th>By</th><th>Status</th><th>Remarks</th></tr>
       </thead>
       <tbody>
-        {% for h in records|sort(attribute='timestamp', reverse=True) %}
-        <tr data-action="{{ h.action_type|lower }}">
-          <td>{{ h.timestamp.strftime('%Y-%m-%d %H:%M:%S') if h.timestamp and h.timestamp is not string else h.timestamp }}</td>
+        {% for h in records %}
+        <tr data-search="{{ h.action_type|lower }} {{ (h.record.document_id if h.record else '')|lower }} {{ (h.action_by or '')|lower }}">
+          <td style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ h.timestamp.strftime('%b %d, %Y  %H:%M') if h.timestamp else '-' }}</td>
           <td>
-            <span class="action-badge action-{{ h.action_type|lower }}">{{ h.action_type|upper }}</span>
+            <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;
+              {% if h.action_type == 'create' %}background:#D1EDD8;color:#1A5C2E;
+              {% elif h.action_type == 'edit' %}background:#DBEAFE;color:#1A3A6B;
+              {% elif h.action_type == 'transfer' %}background:#FEF3C2;color:#7A5700;
+              {% elif h.action_type == 'received' %}background:#D1EDD8;color:#0f5132;
+              {% elif h.action_type == 'close' %}background:#E8E4DF;color:#5C5248;
+              {% else %}background:#F0EDE8;color:#5C5248;{% endif %}">
+              {{ h.action_type }}
+            </span>
           </td>
-          <td>{{ h.record.document_id if h.record else '-' }}</td>
-          <td>{{ h.from_department or h.to_department or '-' }}</td>
-          <td>{{ h.action_by or '-' }}</td>
-          <td>{{ h.status }}</td>
+          <td>
+            {% if h.record %}
+            <a href="{{ url_for('main.document_detail', record_id=h.record.id) }}" class="doc-id" style="text-decoration:none;">{{ h.record.document_id }}</a>
+            {% else %}-{% endif %}
+          </td>
+          <td style="font-size:12px;">
+            {% if h.from_department and h.to_department and h.from_department != h.to_department %}
+            {{ h.from_department }} <i class="fa fa-arrow-right fa-xs mx-1" style="opacity:.4;"></i> {{ h.to_department }}
+            {% elif h.to_department %}{{ h.to_department }}
+            {% elif h.from_department %}{{ h.from_department }}
+            {% else %}-{% endif %}
+          </td>
+          <td style="font-size:12px;">{{ h.action_by or '-' }}</td>
+          <td style="font-size:12px;">{{ h.status }}</td>
+          <td style="font-size:11px;color:var(--muted);font-style:italic;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ h.remarks or '-' }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="6" style="text-align:center;color:#999;padding:40px;">No activity logs found.</td></tr>
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px;font-size:13px;"><i class="fa fa-clipboard-list fa-lg mb-2 d-block"></i>No activity logs found.</td></tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
+    <div style="padding:10px 14px;font-size:11px;color:var(--muted);border-top:1px solid #F0EDE8;">
+      {{ records|length }} log entr{{ 'ies' if records|length != 1 else 'y' }}
+    </div>
   </div>
 </div>
 
 <script>
 function filterLogs() {
-  const filter = document.getElementById('actionFilter').value.toLowerCase();
-  const rows = document.querySelectorAll('#logTable tbody tr');
-  rows.forEach(row => {
-    const action = row.dataset.action || '';
-    row.style.display = (filter === '' || action.includes(filter)) ? '' : 'none';
+  const q = document.getElementById('logSearch').value.toLowerCase();
+  document.querySelectorAll('#logTable tbody tr').forEach(row => {
+    row.style.display = (row.dataset.search || '').includes(q) ? '' : 'none';
   });
 }
 </script>
-
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="fw-bold">Welcome</h1>
+<h2>📁 Document Tracking System</h2>
+<a href="{{ url_for('main.add_record') }}" class="btn btn-primary mb-3">Add Record</a>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Control</th>
+      <th>Dept</th>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Payee</th>
+      <th>Source</th>
+      <th>Date In</th>
+      <th>Clock In</th>
+      <th>Date Ret</th>
+      <th>Clock Out</th>
+      <th>Status</th>
+      <th>Remarks</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if records %}
+      {% for row in records %}
+      <tr>
+        <td>{{ row.control }}</td>
+        <td>{{ row.department }}</td>
+        <td>{{ row.type }}</td>
+        <td>{{ row.amount }}</td>
+        <td>{{ row.payee }}</td>
+        <td>{{ row.source }}</td>
+        <td>{{ row.date_in }}</td>
+        <td>{{ row.clock_in }}</td>
+        <td>{{ row.date_returned }}</td>
+        <td>{{ row.clock_out }}</td>
+        <td>{{ row.status }}</td>
+        <td>{{ row.remarks }}</td>
+        <td>
+          <a href="{{ url_for('main.edit_record') }}" class="btn btn-warning btn-sm">Edit</a>
+          <a href="{{ url_for('main.delete_record') }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="13" class="text-center">No records found</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+        Logout
+    </a>
+</div>
+
+<p class="lead">You are now logged in.</p>
+{% endblock %}

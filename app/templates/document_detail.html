@@ -1,45 +1,277 @@
 {% extends 'index.html' %}
 {% block content %}
+<style>
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:600px){ .detail-grid { grid-template-columns: 1fr; } }
+.di .lbl { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 3px; }
+.di .val { font-size: 13.5px; color: #222; font-weight: 500; }
+.tl { list-style: none; padding: 0; margin: 0; }
+.tl li { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid #F5F0EB; }
+.tl li:last-child { border-bottom: none; }
+.tl-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+.dot-create { background: #D1EDD8; color: #1A5C2E; }
+.dot-transfer { background: #FEF3C2; color: #7A5700; }
+.dot-received { background: #DBEAFE; color: #1A3A6B; }
+.dot-close { background: #E8E4DF; color: #5C5248; }
+.dot-edit { background: #EDE0FF; color: #4A1D96; }
+.tl-action { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 2px; }
+.tl-desc { font-size: 13px; color: #2C2420; line-height: 1.5; }
+.tl-time { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+</style>
+
 <div class="content">
-  <h1 class="dashboard-title">Document Details</h1>
-  <div class="card p-3 mb-3">
-    <h4>{{ record.document_id }} — {{ record.title }}</h4>
-    <p>Type: {{ record.doc_type }} | Status: <strong>{{ record.status }}</strong></p>
-    <p>Implementing Office: {{ record.implementing_office }}</p>
-    <p>Date Received: {{ record.date_received }}</p>
-    <p>Released By: {{ record.released_by }} | Received By: {{ record.received_by }}</p>
-    <div class="mt-2">
+  <div class="d-flex justify-content-between align-items-start mb-4" style="border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <div>
+      <h1 class="dashboard-title">Document Details</h1>
+      <span class="doc-id mt-1 d-inline-block">{{ record.document_id }}</span>
+    </div>
+    <a href="{{ url_for('main.documents') }}" class="btn-gov-outline"><i class="fa fa-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <div style="max-width:860px;">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="ci"><i class="fa-solid fa-file-lines"></i></div>
+        <h3>Document Information</h3>
+        {% if record.priority %}
+        <span class="p-{{ record.priority|lower }} ms-2" style="font-size:10px;padding:2px 7px;border-radius:3px;font-weight:700;text-transform:uppercase;">{{ record.priority }}</span>
+        {% endif %}
+      </div>
+
+      <div class="detail-grid">
+        <div class="di"><div class="lbl">Document ID</div><div class="val doc-id">{{ record.document_id }}</div></div>
+        <div class="di"><div class="lbl">Title</div><div class="val">{{ record.title }}</div></div>
+        <div class="di"><div class="lbl">Document Type</div><div class="val">{{ record.doc_type }}</div></div>
+        <div class="di">
+          <div class="lbl">Status</div>
+          <div class="val">
+            {% if record.status == 'Closed' %}<span class="status-badge s-closed"><i class="fa fa-lock fa-xs me-1"></i>Closed</span>
+            {% else %}<span class="status-badge s-process"><i class="fa fa-circle-half-stroke fa-xs me-1"></i>{{ record.status }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="di"><div class="lbl">Current Department</div><div class="val">{{ record.department }}</div></div>
+        <div class="di"><div class="lbl">Implementing Office</div><div class="val">{{ record.implementing_office }}</div></div>
+        <div class="di"><div class="lbl">Date In</div><div class="val">{{ record.created_at.strftime('%B %d, %Y') if record.created_at else '-' }}</div></div>
+        <div class="di"><div class="lbl">Last Updated</div><div class="val">{{ record.updated_at.strftime('%B %d, %Y  %I:%M %p') if record.updated_at else '-' }}</div></div>
+        <div class="di"><div class="lbl">Amount</div><div class="val">{{ "₱ {:,.2f}".format(record.amount) if record.amount else 'N/A' }}</div></div>
+        <div class="di"><div class="lbl">Released By</div><div class="val">{{ record.released_by }}</div></div>
+        <div class="di" style="grid-column:span 2;">
+          <div class="lbl">Received By</div>
+          <div class="val">
+            {{ record.received_by }}
+            {% if record.received_by == current_user.full_name %}<span style="font-size:10px;color:var(--muted);margin-left:4px;">(you)</span>{% endif %}
+          </div>
+        </div>
+        {% if record.remarks %}
+        <div class="di" style="grid-column:span 2;"><div class="lbl">Remarks</div><div class="val" style="font-style:italic;color:#5C5248;">{{ record.remarks }}</div></div>
+        {% endif %}
+      </div>
+
       {% if current_user.role == 'admin' %}
-      <a class="btn btn-primary btn-sm" href="{{ url_for('main.edit_document', record_id=record.id) }}">Edit</a>
-      <form method="POST" action="{{ url_for('main.delete_document', record_id=record.id) }}" class="d-inline" onsubmit="return confirm('Delete this document?')">
-        <button class="btn btn-danger btn-sm">Delete</button>
-      </form>
-      <button class="btn btn-secondary btn-sm" id="closeBtn">Close Document</button>
+      <div class="d-flex gap-2 flex-wrap mt-4" style="padding-top:14px;border-top:1px solid #EDE8E0;">
+        <a href="{{ url_for('main.edit_document', record_id=record.id) }}" class="btn-sm-action ba-edit"><i class="fa fa-pen me-1"></i>Edit</a>
+        {% if record.status != 'Closed' %}
+        <button class="btn-sm-action ba-transfer" onclick="openTransfer()"><i class="fa fa-paper-plane me-1"></i>Transfer</button>
+        <button class="btn-sm-action ba-close" onclick="openClose()"><i class="fa fa-lock me-1"></i>Close Document</button>
+        {% endif %}
+        <form method="POST" action="{{ url_for('main.delete_document', record_id=record.id) }}" style="display:inline" onsubmit="return confirm('Permanently delete this document?')">
+          <button class="btn-sm-action ba-delete"><i class="fa fa-trash me-1"></i>Delete</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- MOVEMENT HISTORY -->
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="ci"><i class="fa-solid fa-timeline"></i></div>
+        <h3>Movement History</h3>
+        <span class="cc">{{ record.history|length }} event{{ 's' if record.history|length != 1 else '' }}</span>
+      </div>
+      {% if record.history %}
+      <ul class="tl">
+        {% for h in record.history|sort(attribute='timestamp') %}
+        <li>
+          <div class="tl-dot dot-{{ h.action_type|lower }}">
+            {% if h.action_type == 'create' %}<i class="fa fa-plus"></i>
+            {% elif h.action_type == 'transfer' %}<i class="fa fa-paper-plane"></i>
+            {% elif h.action_type == 'received' %}<i class="fa fa-check"></i>
+            {% elif h.action_type == 'close' %}<i class="fa fa-lock"></i>
+            {% elif h.action_type == 'edit' %}<i class="fa fa-pen"></i>
+            {% else %}<i class="fa fa-circle"></i>{% endif %}
+          </div>
+          <div style="flex:1;">
+            <div class="tl-action">
+              {% if h.action_type == 'create' %}Created
+              {% elif h.action_type == 'transfer' %}Transferred
+              {% elif h.action_type == 'received' %}Received
+              {% elif h.action_type == 'close' %}Closed
+              {% elif h.action_type == 'edit' %}Edited
+              {% else %}{{ h.action_type|upper }}{% endif %}
+            </div>
+            <div class="tl-desc">
+              {% if h.action_type == 'transfer' %}
+                <strong>{{ h.from_department }}</strong> <i class="fa fa-arrow-right fa-xs mx-1" style="opacity:.5;"></i> <strong>{{ h.to_department }}</strong>
+                <span style="color:var(--muted);font-size:11px;"> · by {{ h.action_by }}</span>
+              {% elif h.action_type == 'received' %}
+                Received from <strong>{{ h.from_department }}</strong>
+                <span style="color:var(--muted);font-size:11px;"> · by {{ h.action_by }}</span>
+              {% elif h.from_department and h.to_department and h.from_department != h.to_department %}
+                <strong>{{ h.from_department }}</strong> <i class="fa fa-arrow-right fa-xs mx-1" style="opacity:.5;"></i> <strong>{{ h.to_department }}</strong>
+                {% if h.action_by %}<span style="color:var(--muted);font-size:11px;"> · {{ h.action_by }}</span>{% endif %}
+              {% elif h.to_department %}
+                <strong>{{ h.to_department }}</strong>
+                {% if h.action_by %}<span style="color:var(--muted);font-size:11px;"> · {{ h.action_by }}</span>{% endif %}
+              {% endif %}
+              — <span class="status-badge s-process" style="font-size:10px;">{{ h.status }}</span>
+              {% if h.remarks %}<div style="font-size:11.5px;color:#7A6A60;margin-top:3px;font-style:italic;">"{{ h.remarks }}"</div>{% endif %}
+            </div>
+            <div class="tl-time"><i class="fa fa-clock fa-xs me-1"></i>{{ h.timestamp.strftime('%B %d, %Y  %I:%M %p') if h.timestamp else '-' }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p style="color:var(--muted);text-align:center;padding:24px;font-size:13px;">No history recorded.</p>
       {% endif %}
     </div>
   </div>
+</div>
 
-  <div class="card p-3">
-    <h5>History</h5>
-    {% if record.history %}
-      <ul>
-      {% for h in record.history %}
-        <li>{{ h.timestamp }} — {{ h.action_type }} — {{ h.status }} — {% if h.from_department %}{{ h.from_department }} → {% endif %}{{ h.to_department }} ({{ h.action_by }})</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>No history available.</p>
-    {% endif %}
+<!-- TRANSFER MODAL -->
+<div class="modal fade" id="transferModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-paper-plane me-2"></i>Transfer Document</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#FEF9EC;border:1px solid #F5D86A;border-radius:5px;padding:8px 10px;font-size:12px;color:#7A5700;margin-bottom:14px;">
+          <i class="fa fa-circle-info me-1"></i> The receiving office must confirm receipt via their Incoming Documents.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Transfer to Department <span class="text-danger">*</span></label>
+          <select class="form-select" id="tDept">
+            <option value="" disabled selected>Select department...</option>
+            {% for d in departments %}<option value="{{ d.name }}">{{ d.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Remarks <span class="text-muted fw-normal" style="font-size:11px;">(optional)</span></label>
+          <textarea class="form-control" id="tRemarks" rows="2" placeholder="Transfer notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-gov" id="confirmTransfer"><i class="fa fa-paper-plane me-1"></i>Send Transfer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSE MODAL -->
+<div class="modal fade" id="closeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-lock me-2"></i>Close Document</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#FDE8E8;border:1px solid #FACACA;border-radius:5px;padding:8px 10px;font-size:12px;color:#8B0000;margin-bottom:12px;">
+          <i class="fa fa-triangle-exclamation me-1"></i> This will archive the document and mark it as closed.
+        </div>
+        <div>
+          <label class="form-label">Closing Remarks <span class="text-muted fw-normal" style="font-size:11px;">(optional)</span></label>
+          <textarea class="form-control" id="closeRemarks" rows="3" placeholder="Resolution, final notes...">{{ record.remarks or '' }}</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-sm-action ba-close px-3 py-2" id="confirmClose" style="font-size:12px;"><i class="fa fa-lock me-1"></i>Close Document</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MESSAGE MODAL -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="messageTitle">Message</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="messageBody" style="margin:0;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-document.getElementById('closeBtn')?.addEventListener('click', async function(){
-  if(!confirm('Close this document?')) return;
-  const res = await fetch('{{ url_for('main.close_document', record_id=record.id) }}', { method: 'POST' });
-  const data = await res.json();
-  if(data.success) location.reload(); else alert('Failed to close');
+let transferModal = null;
+let closeModal = null;
+let messageModal = null;
+
+function showMessage(title, message) {
+  if (messageModal) {
+    document.getElementById('messageTitle').textContent = title;
+    document.getElementById('messageBody').textContent = message;
+    messageModal.show();
+  }
+}
+
+function openTransfer() { transferModal.show(); }
+function openClose() { closeModal.show(); }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const transferModalElement = document.getElementById('transferModal');
+  const closeModalElement = document.getElementById('closeModal');
+  const messageModalElement = document.getElementById('messageModal');
+  if (transferModalElement) {
+    transferModal = new bootstrap.Modal(transferModalElement);
+  }
+  if (closeModalElement) {
+    closeModal = new bootstrap.Modal(closeModalElement);
+  }
+  if (messageModalElement) {
+    messageModal = new bootstrap.Modal(messageModalElement);
+  }
+
+  document.getElementById('confirmTransfer')?.addEventListener('click', async function() {
+    const dept = document.getElementById('tDept').value;
+    const remarks = document.getElementById('tRemarks').value;
+    if (!dept) { showMessage('Required', 'Please select a target department.'); return; }
+    this.disabled = true; this.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Sending...';
+    const res = await fetch(`/documents/transfer/{{ record.id }}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ to_department: dept, remarks })
+    });
+    const d = await res.json();
+    if (d.success) { 
+      transferModal.hide();
+      showMessage('Success', d.message); 
+      setTimeout(() => { location.reload(); }, 1000);
+    }
+    else { showMessage('Transfer Failed', d.message || 'Transfer failed.'); this.disabled = false; this.innerHTML = '<i class="fa fa-paper-plane me-1"></i>Send Transfer'; }
+  });
+
+  document.getElementById('confirmClose')?.addEventListener('click', async function() {
+    const remarks = document.getElementById('closeRemarks').value;
+    this.disabled = true; this.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Closing...';
+    const res = await fetch(`/documents/close/{{ record.id }}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ remarks })
+    });
+    const d = await res.json();
+    if (d.success) { location.reload(); }
+    else { showMessage('Error', 'Failed to close document.'); this.disabled = false; this.innerHTML = '<i class="fa fa-lock me-1"></i>Close Document'; }
+  });
 });
 </script>
-
 {% endblock %}

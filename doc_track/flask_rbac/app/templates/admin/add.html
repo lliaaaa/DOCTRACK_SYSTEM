@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Add New Record</h2>
+
+<form method="POST">
+
+    <div class="mb-3">
+        <label>Control</label>
+        <input type="text" name="control" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Department</label>
+        <input type="text" name="department" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Type</label>
+        <input type="text" name="type" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Amount</label>
+        <input type="number" name="amount" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Payee</label>
+        <input type="text" name="payee" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Source</label>
+        <input type="text" name="source" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Date In</label>
+        <input type="date" name="date_in" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Clock In</label>
+        <input type="time" name="clock_in" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Date Returned</label>
+        <input type="date" name="date_returned" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Clock Out</label>
+        <input type="time" name="clock_out" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Status</label>
+        <input type="text" name="status" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Remarks</label>
+        <textarea name="remarks" class="form-control"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Record</button>
+
+</form>
+{% endblock %}

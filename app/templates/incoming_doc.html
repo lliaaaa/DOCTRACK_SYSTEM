@@ -1,101 +1,266 @@
 {% extends 'index.html' %}
 {% block content %}
-<style>
-.document-list { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-.search-bar input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
-.search-bar button { padding: 8px 16px; background: #b71c1c; color: white; border: none; border-radius: 6px; cursor: pointer; }
-.table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-.table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-.table th { background: #f1f3f5; font-weight: 600; text-transform: uppercase; }
-.status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-.status-pending { background: #ffc10740; color: #856404; border: 1px solid #ffc107; }
-.status-approved { background: #d1e7dd; color: #0f5132; border: 1px solid #d1e7dd; }
-.action-btns { display: flex; gap: 5px; }
-.action-btns a, .action-btns button { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
-.btn-view { background: #0d6efd; color: white; }
-.btn-receive { background: #198754; color: white; }
-.btn-small { padding: 4px 8px; font-size: 12px; }
-</style>
-
 <div class="content">
-  <h1 class="dashboard-title">Incoming Documents</h1>
-  <p>Documents transferred to {{ current_user.department }}.</p>
-
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Search by document ID or title..." />
-    <button onclick="filterTable()">Search</button>
+  <div class="d-flex justify-content-between align-items-start mb-4" style="border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <div>
+      <h1 class="dashboard-title">Incoming Documents</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Transfers awaiting receipt by <strong>{{ current_user.department }}</strong></div>
+    </div>
   </div>
 
-  <div class="document-list">
-    <table class="table" id="docTable">
+  <!-- PENDING TRANSFERS -->
+  {% if pending_transfers %}
+  <div class="gov-card" style="border-left:3px solid var(--gov-red);margin-bottom:18px;">
+    <div class="gov-card-header">
+      <div class="ci" style="background:var(--gov-red);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3>Awaiting Receipt</h3>
+      <span class="cc">{{ pending_transfers|length }}</span>
+    </div>
+    <div style="background:#FDE8E8;border:1px solid #FACACA;border-radius:5px;padding:8px 10px;font-size:12px;color:#8B0000;margin-bottom:12px;">
+      <i class="fa fa-circle-info me-1"></i> These documents have been transferred to your office and are awaiting confirmation. Click <strong>Receive</strong> to accept them.
+    </div>
+    <div style="overflow-x:auto;">
+    <table id="pendingTable">
       <thead>
-        <tr>
-          <th>Document ID</th>
-          <th>Title</th>
-          <th>Type</th>
-          <th>From</th>
-          <th>Status</th>
-          <th>Date Received</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>Document ID</th><th>Title</th><th>Type</th><th>Transferred By</th><th>From</th><th>Implementing Office</th><th>Date Transferred</th><th>Actions</th></tr>
       </thead>
       <tbody>
-        {% for r in records %}
-        <tr data-doc-id="{{ r.id }}" data-search="{{ r.document_id|lower }} {{ r.title|lower }}">
-          <td><strong>{{ r.document_id }}</strong></td>
-          <td>{{ r.title }}</td>
-          <td>{{ r.doc_type }}</td>
-          <td>{{ r.implementing_office }}</td>
-          <td>
-            <span class="status-badge status-pending">{{ r.status }}</span>
-          </td>
-          <td>{{ r.date_received.strftime('%Y-%m-%d') if r.date_received else '-' }}</td>
-          <td>
-            <div class="action-btns">
-              <a href="{{ url_for('main.document_detail', record_id=r.id) }}" class="btn-view btn-small">View</a>
-              {% if current_user.role == 'admin' %}
-              <button class="btn-receive btn-small receive-btn" data-record-id="{{ r.id }}">Receive</button>
-              {% endif %}
-            </div>
+        {% for h in pending_transfers %}
+        <tr>
+          <td><span class="doc-id">{{ h.record.document_id }}</span></td>
+          <td style="font-weight:500;">{{ h.record.title }}</td>
+          <td style="font-size:12px;">{{ h.record.doc_type }}</td>
+          <td style="font-size:12px;"><i class="fa fa-user fa-xs me-1" style="color:var(--muted);"></i>{{ h.action_by or '-' }}</td>
+          <td><strong>{{ h.from_department }}</strong></td>
+          <td style="font-size:12px;color:var(--muted);">{{ h.record.implementing_office or '-' }}</td>
+          <td style="font-size:11px;color:var(--muted);">{{ h.timestamp.strftime('%b %d, %Y %I:%M %p') if h.timestamp else '-' }}</td>
+          <td class="d-flex gap-1">
+            <a href="{{ url_for('main.document_detail', record_id=h.record.id) }}" class="btn-sm-action ba-view"><i class="fa fa-eye me-1"></i>View</a>
+            {% if current_user.role in ['admin'] %}
+            <button class="btn-sm-action ba-receive receive-btn" data-record-id="{{ h.record.id }}"><i class="fa fa-check me-1"></i>Receive</button>
+            <button class="btn-sm-action ba-danger reject-btn" data-record-id="{{ h.record.id }}" style="color:#dc3545;"><i class="fa fa-xmark me-1"></i>Reject</button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% if not records %}
-    <p style="text-align:center;color:#999;margin-top:20px;">No incoming documents.</p>
+    </div>
+  </div>
+  {% else %}
+  <div style="background:#F5F0E8;border:1px solid #DED8CF;border-radius:6px;padding:12px 16px;font-size:12px;color:var(--muted);margin-bottom:18px;">
+    <i class="fa fa-inbox me-2"></i>No pending transfers for your department.
+  </div>
+  {% endif %}
+
+  <!-- RECEIPT HISTORY -->
+  <div class="gov-card">
+    <div class="gov-card-header">
+      <div class="ci"><i class="fa-solid fa-history"></i></div>
+      <h3>Receipt History</h3>
+      <span class="cc">{{ transfer_history|length }}</span>
+    </div>
+    {% if transfer_history %}
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Document ID</th><th>Title</th><th>From</th><th>Received By</th><th>Date</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for h in transfer_history %}
+        <tr>
+          <td><span class="doc-id">{{ h.record.document_id }}</span></td>
+          <td style="font-weight:500;">{{ h.record.title }}</td>
+          <td><strong>{{ h.from_department }}</strong></td>
+          <td style="font-size:12px;">{{ h.action_by or '-' }}</td>
+          <td style="font-size:11px;color:var(--muted);">{{ h.timestamp.strftime('%b %d, %Y %I:%M %p') if h.timestamp else '-' }}</td>
+          <td>
+            {% if h.action_type == 'received' %}
+            <span class="badge bg-success" style="font-size:11px;"><i class="fa fa-check me-1"></i>Received</span>
+            {% elif h.action_type == 'rejected_transfer' %}
+            <span class="badge bg-danger" style="font-size:11px;"><i class="fa fa-xmark me-1"></i>Rejected</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p style="text-align:center;color:var(--muted);padding:28px;font-size:13px;"><i class="fa fa-inbox fa-lg mb-2 d-block"></i>No receipts yet.</p>
     {% endif %}
+  </div>
+
+</div>
+
+<!-- RECEIPT CONFIRMATION MODAL -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-check me-2"></i>Confirm Receipt</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0;">Confirm receipt of this document?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-gov" id="confirmReceiptBtn"><i class="fa fa-check me-1"></i>Confirm Receipt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REJECTION CONFIRMATION MODAL -->
+<div class="modal fade" id="rejectionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-xmark me-2"></i>Reject Transfer</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#FDE8E8;border:1px solid #FACACA;border-radius:5px;padding:8px 10px;font-size:12px;color:#8B0000;margin-bottom:12px;">
+          <i class="fa fa-triangle-exclamation me-1"></i> Rejecting this transfer will return the document to the sending department.
+        </div>
+        <p style="margin:0;">Are you sure you want to reject this document?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov-outline" data-bs-dismiss="modal">Keep Transfer</button>
+        <button class="btn-gov" id="confirmRejectBtn" style="background:#dc3545;border-color:#dc3545;"><i class="fa fa-xmark me-1"></i>Yes, Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MESSAGE MODAL -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="messageTitle">Message</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="messageBody" style="margin:0;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gov" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 function filterTable() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const rows = document.querySelectorAll('#docTable tbody tr');
-  rows.forEach(row => {
-    const text = row.dataset.search || '';
-    row.style.display = text.includes(search) ? '' : 'none';
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#docTable tbody tr').forEach(row => {
+    row.style.display = (row.dataset.search || '').includes(q) ? '' : 'none';
   });
 }
 
-document.querySelectorAll('.receive-btn').forEach(btn => {
-  btn.addEventListener('click', async function() {
-    if (!confirm('Confirm receipt of this document?')) return;
-    const recordId = this.dataset.recordId;
-    try {
-      const res = await fetch(`{{ url_for('main.receive_document', history_id=0) }}`.replace('0', recordId), { method: 'POST' });
-      if (res.ok) {
-        alert('Document received successfully.');
-        location.reload();
+let receiptModal = null;
+let rejectionModal = null;
+let messageModal = null;
+let currentReceiptRecordId = null;
+let currentRejectRecordId = null;
+
+function showMessage(title, message) {
+  if (messageModal) {
+    document.getElementById('messageTitle').textContent = title;
+    document.getElementById('messageBody').textContent = message;
+    messageModal.show();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const receiptModalElement = document.getElementById('receiptModal');
+  const rejectionModalElement = document.getElementById('rejectionModal');
+  const messageModalElement = document.getElementById('messageModal');
+  if (receiptModalElement) {
+    receiptModal = new bootstrap.Modal(receiptModalElement);
+  }
+  if (rejectionModalElement) {
+    rejectionModal = new bootstrap.Modal(rejectionModalElement);
+  }
+  if (messageModalElement) {
+    messageModal = new bootstrap.Modal(messageModalElement);
+  }
+
+  document.querySelectorAll('.receive-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      currentReceiptRecordId = this.dataset.recordId;
+      if (receiptModal) {
+        receiptModal.show();
       }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to receive document.');
-    }
+    });
   });
+
+  document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      currentRejectRecordId = this.dataset.recordId;
+      if (rejectionModal) {
+        rejectionModal.show();
+      }
+    });
+  });
+
+  const confirmBtn = document.getElementById('confirmReceiptBtn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async function() {
+      this.disabled = true;
+      this.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Processing...';
+      try {
+        const res = await fetch(`/documents/receive/${currentReceiptRecordId}`, { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'} 
+        });
+        const data = await res.json();
+        if (data.success) { 
+          receiptModal.hide();
+          showMessage('Success', data.message);
+          setTimeout(() => { location.reload(); }, 1000);
+        } else { 
+          showMessage('Failed', data.message || 'Failed to receive.'); 
+          this.disabled = false; 
+          this.innerHTML = '<i class="fa fa-check me-1"></i>Confirm Receipt'; 
+        }
+      } catch (err) { 
+        showMessage('Error', 'An error occurred.'); 
+        this.disabled = false; 
+        this.innerHTML = '<i class="fa fa-check me-1"></i>Confirm Receipt'; 
+      }
+    });
+  }
+
+  const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+  if (confirmRejectBtn) {
+    confirmRejectBtn.addEventListener('click', async function() {
+      this.disabled = true;
+      this.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Processing...';
+      try {
+        const res = await fetch(`/documents/reject/${currentRejectRecordId}`, { 
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'} 
+        });
+        const data = await res.json();
+        if (data.success) { 
+          rejectionModal.hide();
+          showMessage('Success', data.message);
+          setTimeout(() => { location.reload(); }, 1000);
+        } else { 
+          showMessage('Failed', data.message || 'Failed to reject.'); 
+          this.disabled = false; 
+          this.innerHTML = '<i class="fa fa-xmark me-1"></i>Yes, Reject'; 
+        }
+      } catch (err) { 
+        showMessage('Error', 'An error occurred.'); 
+        this.disabled = false; 
+        this.innerHTML = '<i class="fa fa-xmark me-1"></i>Yes, Reject'; 
+      }
+    });
+  }
 });
 </script>
-
 {% endblock %}
-

@@ -1,91 +1,344 @@
 {% extends 'index.html' %}
 {% block content %}
 <style>
-.reports-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.report-card { background: #f8f9fa; border-left: 4px solid #b71c1c; padding: 20px; border-radius: 6px; }
-.report-card h4 { margin-top: 0; color: #333; }
-.report-card p { font-size: 14px; color: #666; margin: 10px 0; }
-.report-btn { display: inline-block; margin-top: 10px; padding: 8px 16px; background: #b71c1c; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
-.report-btn:hover { background: #8f0707; }
-.date-filter { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
-.date-filter input { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; }
-.date-filter label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+.rpt-stat { background:white; border-radius:8px; padding:16px 18px; border:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.06); position:relative; overflow:hidden; }
+.rpt-stat::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background:var(--gov-red); }
+.rpt-stat.st-orange::before { background:#F5A623; }
+.rpt-stat.st-green::before { background:#584f4d; }
+.rpt-stat.st-blue::before { background:#1A3A6B; }
+.rpt-stat h2 { font-family:var(--serif); font-size:26px; font-weight:800; color:var(--gov-red); margin:0 0 2px; }
+.rpt-stat.st-orange h2 { color:#F5A623; }
+.rpt-stat.st-green h2 { color:#584f4d; }
+.rpt-stat.st-blue h2 { color:#1A3A6B; }
+.rpt-stat p { margin:0; color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.tab-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+.tab-btn { padding:7px 14px; border:1.5px solid var(--gov-red); border-radius:6px; background:white;
+  color:var(--gov-red); cursor:pointer; font-weight:600; font-size:12px; transition:all .15s; }
+.tab-btn.active, .tab-btn:hover { background:var(--gov-red); color:white; }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+.chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:768px){ .chart-grid { grid-template-columns:1fr; } }
+.chart-box { background:white; border-radius:8px; padding:18px; border:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.chart-box h4 { font-family:var(--serif); font-size:13px; font-weight:700; color:#3C3028; margin-bottom:12px;
+  border-bottom:1px solid #EDE8E0; padding-bottom:8px; }
+canvas { max-height:240px; }
+.rpt-table { width:100%; border-collapse:collapse; }
+.rpt-table th { background:#F5F0E8; font-size:11px; text-transform:uppercase; font-weight:700;
+  color:var(--muted); padding:10px 12px; border-bottom:2px solid #EDE8E0; white-space:nowrap; }
+.rpt-table td { padding:9px 12px; font-size:13px; border-bottom:1px solid #F5F0EB; }
+.rpt-table tr:last-child td { border-bottom:none; }
+.rpt-table tr:hover td { background:#FBF8F5; }
+.hl { color:var(--gov-red); font-weight:700; }
+.date-filter-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.date-filter-bar label { font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px; color:var(--muted); display:block; margin-bottom:3px; }
 </style>
 
 <div class="content">
-  <h1 class="dashboard-title">Reports</h1>
-  <p>Generate comprehensive reports for document tracking and analytics.</p>
+  <div style="margin-bottom:20px;border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
+    <h1 class="dashboard-title">Reports</h1>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">Analytics & exports for <strong>{{ current_user.department }}</strong></div>
+  </div>
 
-  <div class="reports-container">
-    <h3 style="margin-bottom:20px;">Date Range Filter</h3>
-    <div class="date-filter">
-      <div style="flex:1;">
-        <label>From Date</label>
-        <input type="date" id="fromDate" />
-      </div>
-      <div style="flex:1;">
-        <label>To Date</label>
-        <input type="date" id="toDate" />
-      </div>
-      <button style="background:#b71c1c;color:white;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;" onclick="applyDateFilter()">Apply</button>
+  <!-- DATE FILTER -->
+  <div class="gov-card" style="padding:16px 18px;margin-bottom:18px;">
+    <div class="gov-card-header" style="margin-bottom:12px;">
+      <div class="ci"><i class="fa-solid fa-calendar-range"></i></div>
+      <h3>Date Filter</h3>
+      {% if date_from or date_to %}
+      <span class="cc">Filtered</span>
+      {% endif %}
     </div>
-
-    <h3 style="margin-top:30px;margin-bottom:20px;">Available Reports</h3>
-    <div class="report-grid">
-      <div class="report-card">
-        <h4>📊 Department Summary</h4>
-        <p>Summary of all documents by department, status, and time period.</p>
-        <button class="report-btn" onclick="generateReport('department')">Generate Report</button>
+    <form method="GET" class="date-filter-bar" id="reportFilterForm">
+      <div>
+        <label>From Date</label>
+        <input type="date" name="from" value="{{ date_from }}" class="form-control" style="font-size:13px;width:auto;">
       </div>
-
-      <div class="report-card">
-        <h4>⏱️ Processing Times</h4>
-        <p>Average time spent per department and document type bottlenecks.</p>
-        <button class="report-btn" onclick="generateReport('processing')">Generate Report</button>
+      <div>
+        <label>To Date</label>
+        <input type="date" name="to" value="{{ date_to }}" class="form-control" style="font-size:13px;width:auto;">
       </div>
+      <button type="submit" class="btn-gov"><i class="fa fa-filter me-1"></i>Apply Filter</button>
+      {% if date_from or date_to %}
+      <a href="{{ url_for('main.reports') }}" class="btn-gov-outline"><i class="fa fa-xmark me-1"></i>Clear</a>
+      {% endif %}
+    </form>
+    {% if date_from or date_to %}
+    <div style="margin-top:10px;font-size:12px;color:#7A5700;background:#FEF9EC;border:1px solid #F5D86A;border-radius:5px;padding:6px 10px;">
+      <i class="fa fa-circle-info me-1"></i>
+      Showing documents from
+      {% if date_from %}<strong>{{ date_from }}</strong>{% else %}the beginning{% endif %}
+      to
+      {% if date_to %}<strong>{{ date_to }}</strong>{% else %}today{% endif %}
+    </div>
+    {% endif %}
+  </div>
 
-      <div class="report-card">
-        <h4>📈 Document Statistics</h4>
-        <p>Total documents, completion rates, and trends over time.</p>
-        <button class="report-btn" onclick="generateReport('statistics')">Generate Report</button>
+  <!-- STAT CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="rpt-stat">
+        <h2>{{ total_docs }}</h2><p>Total Documents</p>
       </div>
-
-      <div class="report-card">
-        <h4>👥 User Activity</h4>
-        <p>Activity log per staff member and document actions.</p>
-        <button class="report-btn" onclick="generateReport('activity')">Generate Report</button>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="rpt-stat st-orange">
+        <h2>{{ in_process }}</h2><p>In Process</p>
       </div>
-
-      <div class="report-card">
-        <h4>💰 Financial Summary</h4>
-        <p>Document amounts and financial tracking by department.</p>
-        <button class="report-btn" onclick="generateReport('financial')">Generate Report</button>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="rpt-stat st-green">
+        <h2>{{ closed_docs }}</h2><p>Closed</p>
       </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="rpt-stat st-blue">
+        <h2>₱{{ "{:,.0f}".format(total_amount) }}</h2><p>Total Amount</p>
+      </div>
+    </div>
+  </div>
 
-      <div class="report-card">
-        <h4>📋 Compliance Report</h4>
-        <p>Check document status compliance and deadline adherence.</p>
-        <button class="report-btn" onclick="generateReport('compliance')">Generate Report</button>
+  <!-- EXPORT -->
+  <div class="gov-card" style="padding:16px 18px;margin-bottom:18px;">
+    <div class="gov-card-header" style="margin-bottom:12px;">
+      <div class="ci"><i class="fa-solid fa-download"></i></div>
+      <h3>Export Data</h3>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn-gov" onclick="exportCSV('documents')"><i class="fa fa-file-csv me-1"></i>Documents CSV</button>
+      <button class="btn-gov-outline" onclick="exportCSV('history')"><i class="fa fa-file-csv me-1"></i>History CSV</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="showTab('charts', this)"><i class="fa fa-chart-pie me-1"></i>Charts</button>
+    <button class="tab-btn" onclick="showTab('status', this)"><i class="fa fa-tag me-1"></i>By Status</button>
+    <button class="tab-btn" onclick="showTab('dept', this)"><i class="fa fa-building me-1"></i>By Department</button>
+    <button class="tab-btn" onclick="showTab('priority', this)"><i class="fa fa-flag me-1"></i>By Priority</button>
+    <button class="tab-btn" onclick="showTab('financial', this)"><i class="fa fa-peso-sign me-1"></i>Financial</button>
+    <button class="tab-btn" onclick="showTab('processing', this)"><i class="fa fa-clock me-1"></i>Processing Time</button>
+    <button class="tab-btn" onclick="showTab('activity', this)"><i class="fa fa-users me-1"></i>User Activity</button>
+    <button class="tab-btn" onclick="showTab('monthly', this)"><i class="fa fa-calendar me-1"></i>Monthly</button>
+    <button class="tab-btn" onclick="showTab('alldocs', this)"><i class="fa fa-list me-1"></i>All Documents</button>
+  </div>
+
+  <!-- CHARTS -->
+  <div id="tab-charts" class="tab-pane active">
+    <div class="chart-grid">
+      <div class="chart-box"><h4><i class="fa fa-chart-pie me-2" style="color:var(--gov-red);"></i>Status Distribution</h4><canvas id="statusChart"></canvas></div>
+      <div class="chart-box"><h4><i class="fa fa-chart-bar me-2" style="color:var(--gov-red);"></i>By Document Type</h4><canvas id="typeChart"></canvas></div>
+      <div class="chart-box"><h4><i class="fa fa-chart-line me-2" style="color:var(--gov-red);"></i>Monthly Intake</h4><canvas id="monthlyChart"></canvas></div>
+      <div class="chart-box"><h4><i class="fa fa-chart-bar me-2" style="color:var(--gov-red);"></i>Processing Time (hrs/dept)</h4><canvas id="processingChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="tab-status" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-tag"></i></div><h3>Status Breakdown</h3></div>
+      <table class="rpt-table"><thead><tr><th>Status</th><th>Count</th><th>Share</th></tr></thead><tbody>
+        {% for status, count in status_summary %}
+        <tr>
+          <td>
+            {% if status == 'Closed' %}<span class="status-badge s-closed">Closed</span>
+            {% else %}<span class="status-badge s-process">{{ status }}</span>{% endif %}
+          </td>
+          <td class="hl">{{ count }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ ((count / total_docs * 100)|round(1)) if total_docs else 0 }}%</td>
+        </tr>
+        {% else %}<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;">No data.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- DEPT -->
+  <div id="tab-dept" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-building"></i></div><h3>Department Summary</h3></div>
+      <table class="rpt-table"><thead><tr><th>Department</th><th>Documents</th></tr></thead><tbody>
+        {% for dept, count in dept_summary %}
+        <tr><td>{{ dept }}</td><td class="hl">{{ count }}</td></tr>
+        {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">No data.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- PRIORITY -->
+  <div id="tab-priority" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-flag"></i></div><h3>Priority Breakdown</h3></div>
+      <table class="rpt-table"><thead><tr><th>Priority</th><th>Count</th></tr></thead><tbody>
+        {% for pri, count in priority_summary %}
+        <tr>
+          <td><span class="p-{{ pri|lower }}">{{ pri }}</span></td>
+          <td class="hl">{{ count }}</td>
+        </tr>
+        {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">No data.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- FINANCIAL -->
+  <div id="tab-financial" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-peso-sign"></i></div>
+        <h3>Financial Summary</h3>
+        <span class="cc">₱{{ "{:,.2f}".format(total_amount) }}</span>
+      </div>
+      <table class="rpt-table"><thead><tr><th>Document Type</th><th>Total Amount (₱)</th></tr></thead><tbody>
+        {% for doc_type, total in financial %}
+        <tr><td>{{ doc_type }}</td><td class="hl">₱ {{ "{:,.2f}".format(total or 0) }}</td></tr>
+        {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">No financial records.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- PROCESSING TIME -->
+  <div id="tab-processing" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-clock"></i></div><h3>Avg Processing Time per Department</h3></div>
+      <table class="rpt-table"><thead><tr><th>Department</th><th>Avg Hours</th><th>Avg Days</th></tr></thead><tbody>
+        {% if avg_processing %}
+          {% for dept, hours in avg_processing.items()|sort(attribute='1', reverse=True) %}
+          <tr><td>{{ dept }}</td><td class="hl">{{ hours }} hrs</td><td style="font-size:12px;color:var(--muted);">{{ (hours / 24)|round(1) }} days</td></tr>
+          {% endfor %}
+        {% else %}<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;">Transfer documents to generate this data.</td></tr>{% endif %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- USER ACTIVITY -->
+  <div id="tab-activity" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-users"></i></div><h3>User Activity</h3></div>
+      <table class="rpt-table"><thead><tr><th>Staff Member</th><th>Total Actions</th></tr></thead><tbody>
+        {% for name, count in user_activity %}
+        <tr><td>{{ name or 'Unknown' }}</td><td class="hl">{{ count }}</td></tr>
+        {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">No activity data.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div id="tab-monthly" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header"><div class="ci"><i class="fa fa-calendar"></i></div><h3>Monthly Document Intake</h3></div>
+      <table class="rpt-table"><thead><tr><th>Month</th><th>Documents</th></tr></thead><tbody>
+        {% for month, count in monthly %}
+        <tr><td>{{ month }}</td><td class="hl">{{ count }}</td></tr>
+        {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">No data.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ALL DOCUMENTS -->
+  <div id="tab-alldocs" class="tab-pane">
+    <div class="gov-card">
+      <div class="gov-card-header">
+        <div class="ci"><i class="fa fa-list"></i></div>
+        <h3>All Documents</h3>
+        <span class="cc">{{ total_docs }}</span>
+      </div>
+      <div class="mb-3">
+        <input type="text" id="docSearch" placeholder="Search documents..." oninput="filterDocs()" class="form-control" style="max-width:360px;font-size:13px;">
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="rpt-table" id="docReportTable">
+        <thead><tr><th>Document ID</th><th>Title</th><th>Type</th><th>Priority</th><th>Status</th><th>Department</th><th>Amount</th><th>Date In</th></tr></thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td><span class="doc-id">{{ r.document_id }}</span></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.title }}</td>
+            <td style="font-size:12px;">{{ r.doc_type }}</td>
+            <td><span class="p-{{ (r.priority or 'normal')|lower }}">{{ r.priority or 'Normal' }}</span></td>
+            <td>
+              {% if r.status == 'Closed' %}<span class="status-badge s-closed">Closed</span>
+              {% else %}<span class="status-badge s-process">{{ r.status }}</span>{% endif %}
+            </td>
+            <td style="font-size:12px;">{{ r.department }}</td>
+            <td style="font-size:12px;">{{ "₱ {:,.2f}".format(r.amount) if r.amount else "-" }}</td>
+            <td style="font-size:11px;color:var(--muted);">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '-' }}</td>
+          </tr>
+          {% else %}<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No documents.</td></tr>{% endfor %}
+        </tbody>
+      </table>
       </div>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function applyDateFilter() {
-  const from = document.getElementById('fromDate').value;
-  const to = document.getElementById('toDate').value;
-  if (!from || !to) {
-    alert('Please select both from and to dates.');
-    return;
-  }
-  alert('Filtering reports from ' + from + ' to ' + to);
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
 }
 
-function generateReport(reportType) {
-  alert('Generating ' + reportType + ' report... This feature will export as PDF/CSV.');
+function filterDocs() {
+  const q = document.getElementById('docSearch').value.toLowerCase();
+  document.querySelectorAll('#docReportTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
 }
+
+function exportCSV(type) {
+  const from = document.querySelector('input[name="from"]').value;
+  const to = document.querySelector('input[name="to"]').value;
+  let url = `/reports/export?type=${type}`;
+  if (from) url += `&from=${from}`;
+  if (to) url += `&to=${to}`;
+  window.location.href = url;
+}
+
+const colors = ['#b71c1c','#1976d2','#388e3c','#f57c00','#7b1fa2','#0288d1','#c2185b','#00796b','#5d4037','#455a64'];
+
+function makeChart(id, type, labels, data, label) {
+  const ctx = document.getElementById(id);
+  if (!ctx || !labels || !labels.length) return;
+  new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        backgroundColor: type === 'line' ? 'rgba(183,28,28,0.12)' : colors.slice(0, data.length),
+        borderColor: type === 'line' ? '#b71c1c' : colors.slice(0, data.length),
+        borderWidth: 2, fill: type === 'line', tension: 0.3,
+        pointRadius: type === 'line' ? 4 : 0,
+        pointBackgroundColor: '#b71c1c'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: ['doughnut','pie'].includes(type) } },
+      scales: !['doughnut','pie'].includes(type) ? {
+        y: { grid: { color: '#F0EDE8' }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      } : {}
+    }
+  });
+}
+
+const statusLabels = JSON.parse('{{ status_summary | map(attribute=0) | list | tojson }}');
+const statusValues = JSON.parse('{{ status_summary | map(attribute=1) | list | tojson }}');
+const typeLabels = JSON.parse('{{ type_summary | map(attribute=0) | list | tojson }}');
+const typeValues = JSON.parse('{{ type_summary | map(attribute=1) | list | tojson }}');
+const monthLabels = JSON.parse('{{ monthly | map(attribute=0) | list | tojson }}');
+const monthValues = JSON.parse('{{ monthly | map(attribute=1) | list | tojson }}');
+const procLabels = JSON.parse('{{ avg_processing.keys() | list | tojson }}');
+const procValues = JSON.parse('{{ avg_processing.values() | list | tojson }}');
+
+makeChart('statusChart', 'doughnut', statusLabels, statusValues, 'Documents');
+makeChart('typeChart', 'bar', typeLabels, typeValues, 'Documents');
+makeChart('monthlyChart', 'line', monthLabels, monthValues, 'Documents');
+makeChart('processingChart', 'bar', procLabels, procValues, 'Avg Hours');
 </script>
-
 {% endblock %}
