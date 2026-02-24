@@ -15,17 +15,36 @@ from .decorators import role_required
 
 bp = Blueprint("main", __name__)
 
+# Statuses that mean the document is fully done (no more transfers allowed).
+COMPLETED_STATUSES = {"Closed", "With Checked and Closed"}
+
+
+def get_next_status(current_status_name: str) -> str:
+    """
+    Returns the next status in sequence from the DocumentStatus table.
+    If there is no next step, returns 'With Checked and Closed'.
+    """
+    current = DocumentStatus.query.filter_by(name=current_status_name).first()
+    if current:
+        nxt = (DocumentStatus.query
+               .filter(DocumentStatus.id > current.id)
+               .order_by(DocumentStatus.id.asc())
+               .first())
+        if nxt:
+            return nxt.name
+    return "With Checked and Closed"
+
+
+# ---------------------------------------------------------------------------
 
 def visible_documents(department):
-    # Get records that have been received by or transferred to this department
     processed_record_ids = (
         db.session.query(RecordHistory.record_id).filter(
             (RecordHistory.from_department == department)
             | (RecordHistory.to_department == department)
         ).subquery()
     )
-    
-    # Get records with pending transfers TO this department (not yet received)
+
     pending_transfer_ids = (
         db.session.query(RecordHistory.record_id).filter(
             RecordHistory.action_type == "transfer",
@@ -38,7 +57,7 @@ def visible_documents(department):
             )
         ).subquery()
     )
-    
+
     return Record.query.filter(
         or_(
             Record.department == department,
@@ -59,11 +78,13 @@ def dashboard():
     records_q = visible_documents(current_user.department)
     stats = {
         "total_documents": records_q.count(),
-        "closed": records_q.filter(Record.status == "Closed").count(),
-        "completed": records_q.filter(Record.status == "With Checked").count(),
-        "in_process": records_q.filter(Record.status.notin_(["Closed", "With Checked"])).count(),
+        "closed":     records_q.filter(Record.status == "Closed").count(),
+        "completed":  records_q.filter(Record.status == "With Checked and Closed").count(),
+        "in_process": records_q.filter(Record.status.notin_(list(COMPLETED_STATUSES))).count(),
     }
-    status_data = records_q.with_entities(Record.status, func.count(Record.id)).group_by(Record.status).all()
+    status_data = (records_q
+                   .with_entities(Record.status, func.count(Record.id))
+                   .group_by(Record.status).all())
     records = records_q.order_by(Record.created_at.desc()).limit(5).all()
     return render_template("dashboard.html", stats=stats, charts_combined=status_data, records=records)
 
@@ -81,9 +102,9 @@ def documents():
     if status_filter == "closed":
         records_q = records_q.filter(Record.status == "Closed")
     elif status_filter == "completed":
-        records_q = records_q.filter(Record.status == "With Checked")
+        records_q = records_q.filter(Record.status == "With Checked and Closed")
     elif status_filter == "inprocess":
-        records_q = records_q.filter(Record.status.notin_(["Closed", "With Checked"]))
+        records_q = records_q.filter(Record.status.notin_(list(COMPLETED_STATUSES)))
     records = records_q.order_by(Record.date_received.desc()).all()
     return render_template("documents.html", records=records, q=q, status_filter=status_filter)
 
@@ -198,7 +219,6 @@ def add_user():
 @role_required("admin")
 def edit_user(id):
     user = db.session.get(User, id) or abort(404)
-    # Prevent editing other permanent admins, but allow editing temp-promoted users
     if user.role == "admin" and user.id != current_user.id and not user.is_temp_admin:
         flash("Cannot edit other admin accounts.", "danger")
         return redirect(url_for("main.users"))
@@ -220,7 +240,6 @@ def edit_user(id):
             flash("Password must be at least 6 characters.", "warning")
             return redirect(url_for("main.users"))
         user.set_password(new_password)
-    # Handle temporary admin access toggle
     give_admin = request.form.get("give_admin_access") == "on"
     if give_admin:
         user.role = "admin"
@@ -270,27 +289,21 @@ def add_document():
     departments = Department.query.all()
 
     if request.method == "POST":
-        date_str = request.form.get("date_received", "").strip()
-        try:
-            date_received = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except ValueError:
-            date_received = date.today()
+        date_received = date.today()
 
-        amount_input = request.form.get("amount", "").strip()
-        amount = float(amount_input) if amount_input else None
-
-        # Auto-assign the first status from DocumentStatus table
+        doc_type = request.form["doc_type"]
+        # Auto-assign the first status from the DocumentStatus table.
         first_status = DocumentStatus.query.order_by(DocumentStatus.id.asc()).first()
         auto_status = first_status.name if first_status else "Pending"
 
         record = Record(
             document_id=f"DOC-{uuid.uuid4().hex[:8].upper()}",
             title=request.form["title"],
-            doc_type=request.form["doc_type"],
+            doc_type=doc_type,
+            action_taken=request.form.get("action_taken", ""),
             department=current_user.department,
             implementing_office=current_user.department,
             date_received=date_received,
-            amount=amount,
             released_by=current_user.full_name,
             received_by=request.form.get("received_by", current_user.full_name),
             status=auto_status,
@@ -309,7 +322,7 @@ def add_document():
         ))
         db.session.commit()
         flash(f"Document {record.document_id} added successfully.", "success")
-        return redirect(url_for("main.documents"))
+        return redirect(url_for("main.document_detail", record_id=record.id))
 
     return render_template("admin/new_doc.html", users=dept_users,
                            document_type=document_type, document_status=document_status,
@@ -319,19 +332,20 @@ def add_document():
 @bp.route("/incoming")
 @login_required
 def incoming_documents():
+    q = request.args.get("q", "").strip()
+
     records = (visible_documents(current_user.department)
                .filter(Record.department == current_user.department)
-               .filter(Record.status != "Closed")
+               .filter(Record.status.notin_(list(COMPLETED_STATUSES)))
                .order_by(Record.updated_at.desc()).all())
+
     already_received_ids = (
         db.session.query(RecordHistory.record_id)
         .filter_by(action_type="received", to_department=current_user.department)
         .subquery()
     )
-    # Correlated alias: exclude a transfer if a rejection for the same record exists AFTER it.
-    # This way, re-transfers after a rejection will correctly reappear.
     RejH = aliased(RecordHistory)
-    pending_transfers = (
+    pending_q = (
         RecordHistory.query
         .filter_by(action_type="transfer", to_department=current_user.department)
         .filter(~RecordHistory.record_id.in_(already_received_ids))
@@ -343,11 +357,10 @@ def incoming_documents():
                 RejH.timestamp > RecordHistory.timestamp
             ).exists()
         )
-        .order_by(RecordHistory.timestamp.desc()).all()
+        .order_by(RecordHistory.timestamp.desc())
     )
-    
-    # Get transfer history (received and rejected)
-    transfer_history = (
+
+    history_q = (
         RecordHistory.query
         .filter(RecordHistory.to_department == current_user.department)
         .filter(RecordHistory.action_type.in_(["received", "rejected_transfer"]))
@@ -355,11 +368,31 @@ def incoming_documents():
             db.session.query(RecordHistory.record_id)
             .filter_by(action_type="transfer", to_department=current_user.department)
         ))
-        .order_by(RecordHistory.timestamp.desc()).all()
+        .order_by(RecordHistory.timestamp.desc())
     )
-    
-    return render_template("incoming_doc.html", records=records, pending_transfers=pending_transfers,
-                          transfer_history=transfer_history)
+
+    pending_transfers = pending_q.all()
+    transfer_history = history_q.all()
+
+    if q:
+        ql = q.lower()
+        pending_transfers = [
+            h for h in pending_transfers
+            if ql in (h.record.document_id or "").lower()
+            or ql in (h.record.title or "").lower()
+            or ql in (h.from_department or "").lower()
+            or ql in (h.action_by or "").lower()
+        ]
+        transfer_history = [
+            h for h in transfer_history
+            if ql in (h.record.document_id or "").lower()
+            or ql in (h.record.title or "").lower()
+            or ql in (h.from_department or "").lower()
+        ]
+
+    return render_template("incoming_doc.html", records=records,
+                           pending_transfers=pending_transfers,
+                           transfer_history=transfer_history, q=q)
 
 
 @bp.route("/outgoing")
@@ -370,13 +403,12 @@ def outgoing_documents():
                 .order_by(RecordHistory.timestamp.desc()).all())
     my_records = (visible_documents(current_user.department)
                   .filter(Record.department == current_user.department)
-                  .filter(Record.status != "Closed").all())
-    
-    # Get records with unresolved pending transfers
+                  .filter(Record.status.notin_(list(COMPLETED_STATUSES))).all())
+
     pending_transfer_ids = set()
     received_transfer_ids = set()
     rejected_transfer_ids = set()
-    
+
     for record in my_records:
         last_transfer = (
             RecordHistory.query
@@ -385,24 +417,17 @@ def outgoing_documents():
             .first()
         )
         if last_transfer:
-            # Check if this transfer has been received or rejected AFTER the transfer timestamp
             was_received = (
                 RecordHistory.query
-                .filter_by(
-                    record_id=record.id,
-                    action_type="received",
-                    to_department=last_transfer.to_department
-                )
+                .filter_by(record_id=record.id, action_type="received",
+                           to_department=last_transfer.to_department)
                 .filter(RecordHistory.timestamp > last_transfer.timestamp)
                 .first()
             )
             was_rejected = (
                 RecordHistory.query
-                .filter_by(
-                    record_id=record.id,
-                    action_type="rejected_transfer",
-                    to_department=last_transfer.to_department
-                )
+                .filter_by(record_id=record.id, action_type="rejected_transfer",
+                           to_department=last_transfer.to_department)
                 .filter(RecordHistory.timestamp > last_transfer.timestamp)
                 .first()
             )
@@ -413,40 +438,32 @@ def outgoing_documents():
             else:
                 pending_transfer_ids.add(record.id)
 
-    # Get transfer status for outgoing history
     transfer_status = {}
     for h in outgoing:
         was_received = (
             RecordHistory.query
-            .filter_by(
-                record_id=h.record_id,
-                action_type="received",
-                to_department=h.to_department
-            )
+            .filter_by(record_id=h.record_id, action_type="received",
+                       to_department=h.to_department)
             .filter(RecordHistory.timestamp > h.timestamp)
             .first()
         )
         was_rejected = (
             RecordHistory.query
-            .filter_by(
-                record_id=h.record_id,
-                action_type="rejected_transfer",
-                to_department=h.to_department
-            )
+            .filter_by(record_id=h.record_id, action_type="rejected_transfer",
+                       to_department=h.to_department)
             .filter(RecordHistory.timestamp > h.timestamp)
             .first()
         )
         if was_received:
-            transfer_status[h.id] = 'received'
+            transfer_status[h.id] = "received"
         elif was_rejected:
-            transfer_status[h.id] = 'rejected'
+            transfer_status[h.id] = "rejected"
         else:
-            transfer_status[h.id] = 'pending'
-    
+            transfer_status[h.id] = "pending"
+
     departments = Department.query.filter(Department.name != current_user.department).all()
-    document_statuses = DocumentStatus.query.all()
     return render_template("outgoing_doc.html", outgoing=outgoing, records=my_records,
-                           departments=departments, document_statuses=document_statuses,
+                           departments=departments,
                            pending_transfer_ids=pending_transfer_ids,
                            received_transfer_ids=received_transfer_ids,
                            transfer_status=transfer_status)
@@ -455,17 +472,22 @@ def outgoing_documents():
 @bp.route("/processing")
 @login_required
 def processing_documents():
+    # Open = docs in this dept, not yet assigned to anyone
     records = (visible_documents(current_user.department)
-               .filter(Record.status.notin_(["Closed", "With Checked"]))
+               .filter(Record.department == current_user.department)
+               .filter(Record.status.notin_(list(COMPLETED_STATUSES)))
+               .filter(Record.status != "Assigned")
+               .filter(or_(Record.received_by == None, Record.received_by == ""))
                .order_by(Record.updated_at.desc()).all())
-    return render_template("processing_doc.html", records=records)
+    dept_users = User.query.filter_by(department=current_user.department, is_deactivated=False).all()
+    return render_template("processing_doc.html", records=records, dept_users=dept_users)
 
 
 @bp.route("/archived")
 @login_required
 def archived_documents():
     records = (visible_documents(current_user.department)
-               .filter(Record.status == "Closed")
+               .filter(Record.status.in_(list(COMPLETED_STATUSES)))
                .order_by(Record.updated_at.desc()).all())
     return render_template("closed.html", records=records)
 
@@ -474,91 +496,93 @@ def archived_documents():
 @login_required
 def transfer_document(record_id):
     record = db.session.get(Record, record_id) or abort(404)
+
+    if record.status in COMPLETED_STATUSES:
+        return jsonify(success=False, message="This document is already completed and cannot be transferred.")
+
+    # Only the assigned staff can release the document
+    if record.received_by != current_user.full_name:
+        return jsonify(success=False, message="Only the staff assigned to this document can release it.")
+
+    # Document must be in Assigned status before it can be released
+    if record.status != "Assigned":
+        return jsonify(success=False, message="Document must be assigned before it can be released.")
+
     data = request.get_json() or {}
     to_dept = data.get("to_department", "").strip()
-    new_status = data.get("status", record.status).strip()
     remarks = data.get("remarks", "").strip()
-    
+
     if not to_dept:
         return jsonify(success=False, message="Please select a target department.")
-    
-    # Get the most recent transfer for this document
+
+    # Can't transfer to own department
+    if to_dept == current_user.department:
+        return jsonify(success=False, message="Cannot transfer to your own department.")
+
+    # Block if there's already a pending unresolved transfer
     last_transfer = (
         RecordHistory.query
         .filter_by(record_id=record.id, action_type="transfer")
         .order_by(RecordHistory.timestamp.desc())
         .first()
     )
-    
     if last_transfer:
-        # Allow re-transfer only if the last transfer was received OR rejected
         was_received = (
             RecordHistory.query
-            .filter_by(
-                record_id=record.id,
-                action_type="received",
-                to_department=last_transfer.to_department
-            )
+            .filter_by(record_id=record.id, action_type="received",
+                       to_department=last_transfer.to_department)
             .filter(RecordHistory.timestamp > last_transfer.timestamp)
             .first()
         )
         was_rejected = (
             RecordHistory.query
-            .filter_by(
-                record_id=record.id,
-                action_type="rejected_transfer",
-                to_department=last_transfer.to_department
-            )
+            .filter_by(record_id=record.id, action_type="rejected_transfer",
+                       to_department=last_transfer.to_department)
             .filter(RecordHistory.timestamp > last_transfer.timestamp)
             .first()
         )
-
         if not was_received and not was_rejected:
             return jsonify(
                 success=False,
-                message=f"Document is still pending with {last_transfer.to_department}. Please wait for them to receive or reject it before transferring again."
+                message=f"Document is still pending with {last_transfer.to_department}. "
+                        f"Wait for them to receive or reject it before transferring again."
             )
-    
+
+    # Auto-advance to next status in sequence
+    new_status = get_next_status(record.status)
+
+    # Clear assigned staff on release
+    record.received_by = ""
+    record.status = new_status
+    record.updated_at = datetime.now(timezone.utc)
     db.session.add(RecordHistory(
         record_id=record.id, action_type="transfer",
         from_department=current_user.department, to_department=to_dept,
         action_by=current_user.full_name, status=new_status, remarks=remarks,
         timestamp=datetime.now(timezone.utc),
     ))
-    record.status = new_status
-    record.updated_at = datetime.now(timezone.utc)
     db.session.commit()
-    return jsonify(success=True, message=f"Document transferred to {to_dept}.",
-                   record_id=record.id, status=record.status)
+    return jsonify(success=True,
+                   message=f"Document released to {to_dept}.",
+                   record_id=record.id, status=new_status)
 
 
 @bp.route("/documents/cancel-transfer/<int:transfer_history_id>", methods=["POST"])
 @login_required
 def cancel_transfer(transfer_history_id):
     transfer = db.session.get(RecordHistory, transfer_history_id) or abort(404)
-    
-    # Verify the user is from the sending department
     if transfer.from_department != current_user.department:
         return jsonify(success=False, message="You can only cancel transfers from your department.")
-    
-    # Check if transfer has been received
     was_received = (
         RecordHistory.query
-        .filter_by(
-            record_id=transfer.record_id,
-            action_type="received",
-            to_department=transfer.to_department
-        )
+        .filter_by(record_id=transfer.record_id, action_type="received",
+                   to_department=transfer.to_department)
         .first()
     )
-    
     if was_received:
         return jsonify(success=False, message="Cannot cancel a transfer that has already been received.")
-    
-    # Delete the transfer record
     db.session.delete(transfer)
     db.session.commit()
-    
     return jsonify(success=True, message="Transfer cancelled successfully.")
 
 
@@ -566,66 +590,73 @@ def cancel_transfer(transfer_history_id):
 @login_required
 def receive_document(record_id):
     record = db.session.get(Record, record_id) or abort(404)
-    
-    # For pending transfers - check if there's a pending transfer to our department
+
     already_received_ids = (
         db.session.query(RecordHistory.record_id)
         .filter_by(action_type="received", to_department=current_user.department)
         .subquery()
     )
-    pending = (RecordHistory.query
-               .filter_by(action_type="transfer", to_department=current_user.department, record_id=record_id)
-               .filter(~RecordHistory.record_id.in_(already_received_ids))
-               .order_by(RecordHistory.timestamp.desc()).first())
-    
-    # Update department if receiving from transfer
+    pending = (
+        RecordHistory.query
+        .filter_by(action_type="transfer", to_department=current_user.department, record_id=record_id)
+        .filter(~RecordHistory.record_id.in_(already_received_ids))
+        .order_by(RecordHistory.timestamp.desc())
+        .first()
+    )
+
+    # Move ownership to receiving department
     if pending:
         record.department = current_user.department
 
-    # Auto-advance status to the next step on receive
-    current_status = DocumentStatus.query.filter_by(name=record.status).first()
-    if current_status:
-        next_status = (DocumentStatus.query
-                       .filter(DocumentStatus.id > current_status.id)
-                       .order_by(DocumentStatus.id.asc())
-                       .first())
-        record.status = next_status.name if next_status else "Closed"
-    else:
-        record.status = "Closed"
-
+    # Whoever receives is automatically the assigned staff
+    record.received_by = current_user.full_name
+    record.status = "Assigned"
     record.updated_at = datetime.now(timezone.utc)
+
     db.session.add(RecordHistory(
         record_id=record.id, action_type="received",
         from_department=pending.from_department if pending else record.department,
         to_department=current_user.department,
-        action_by=current_user.full_name, status=record.status,
+        action_by=current_user.full_name, status="Assigned",
         timestamp=datetime.now(timezone.utc),
     ))
     db.session.commit()
-    return jsonify(success=True, message="Document received successfully.",
+    return jsonify(success=True, message="Document received and assigned to you.",
                    record_id=record.id, new_department=current_user.department,
-                   status=record.status, received_by=record.received_by)
+                   status="Assigned", received_by=current_user.full_name)
 
 
 @bp.route("/documents/reject/<int:record_id>", methods=["POST"])
 @login_required
 def reject_document(record_id):
     record = db.session.get(Record, record_id) or abort(404)
-    
-    # Get the pending transfer
     already_received_ids = (
         db.session.query(RecordHistory.record_id)
         .filter_by(action_type="received", to_department=current_user.department)
         .subquery()
     )
-    pending = (RecordHistory.query
-               .filter_by(action_type="transfer", to_department=current_user.department, record_id=record_id)
-               .filter(~RecordHistory.record_id.in_(already_received_ids))
-               .order_by(RecordHistory.timestamp.desc()).first())
-    
+    pending = (
+        RecordHistory.query
+        .filter_by(action_type="transfer", to_department=current_user.department, record_id=record_id)
+        .filter(~RecordHistory.record_id.in_(already_received_ids))
+        .order_by(RecordHistory.timestamp.desc())
+        .first()
+    )
     if not pending:
         return jsonify(success=False, message="No pending transfer found to reject.")
-    
+
+    # Revert status to what it was before this transfer.
+    previous_history = (
+        RecordHistory.query
+        .filter_by(record_id=record.id)
+        .filter(RecordHistory.timestamp < pending.timestamp)
+        .order_by(RecordHistory.timestamp.desc())
+        .first()
+    )
+    if previous_history:
+        record.status = previous_history.status
+        record.updated_at = datetime.now(timezone.utc)
+
     db.session.add(RecordHistory(
         record_id=record.id, action_type="rejected_transfer",
         from_department=pending.from_department,
@@ -634,38 +665,9 @@ def reject_document(record_id):
         timestamp=datetime.now(timezone.utc),
     ))
     db.session.commit()
-    return jsonify(success=True, message=f"Transfer rejected. Document returned to {pending.from_department}.",
+    return jsonify(success=True,
+                   message=f"Transfer rejected. Document returned to {pending.from_department}.",
                    record_id=record.id)
-@login_required
-def transfer_receive():
-    my_records = (visible_documents(current_user.department)
-                  .filter(Record.department == current_user.department)
-                  .filter(Record.status != "Closed").all())
-    already_received_subq = (
-        db.session.query(RecordHistory.record_id)
-        .filter_by(action_type="received", to_department=current_user.department)
-        .subquery()
-    )
-    RejH2 = aliased(RecordHistory)
-    incoming_transfers = (
-        RecordHistory.query
-        .filter_by(action_type="transfer", to_department=current_user.department)
-        .filter(~RecordHistory.record_id.in_(already_received_subq))
-        .filter(
-            ~db.session.query(RejH2).filter(
-                RejH2.record_id == RecordHistory.record_id,
-                RejH2.action_type == "rejected_transfer",
-                RejH2.to_department == current_user.department,
-                RejH2.timestamp > RecordHistory.timestamp
-            ).exists()
-        )
-        .order_by(RecordHistory.timestamp.desc()).all()
-    )
-    departments = Department.query.filter(Department.name != current_user.department).all()
-    document_statuses = DocumentStatus.query.all()
-    return render_template("admin/transfer_receive.html",
-                           records=my_records, incoming_transfers=incoming_transfers,
-                           departments=departments, document_statuses=document_statuses)
 
 
 @bp.route("/trace")
@@ -694,7 +696,6 @@ def analytics():
                 delta = (nxt.timestamp - cur.timestamp).total_seconds()
                 if delta > 0:
                     dept_durations[cur.to_department].append(delta)
-
     avg_hours = {d: (sum(s) / len(s)) / 3600.0 for d, s in dept_durations.items()}
     avg_values = list(avg_hours.values())
     overall_mean = statistics.mean(avg_values) if avg_values else 0
@@ -714,8 +715,8 @@ def analytics():
 def reports():
     all_records = visible_documents(current_user.department).order_by(Record.date_received.desc()).all()
     total_docs = len(all_records)
-    closed_docs = sum(1 for r in all_records if r.status == "Closed")
-    in_process = sum(1 for r in all_records if r.status not in ["Closed", "With Checked"])
+    closed_docs = sum(1 for r in all_records if r.status in COMPLETED_STATUSES)
+    in_process = sum(1 for r in all_records if r.status not in COMPLETED_STATUSES)
     total_amount = sum(r.amount or 0 for r in all_records)
     dept_dict = defaultdict(int)
     status_dict = defaultdict(int)
@@ -842,9 +843,9 @@ def office_settings():
 def activity_logs():
     action_filter = request.args.get("action", "").strip()
     records_q = (RecordHistory.query.join(Record, RecordHistory.record_id == Record.id)
-               .filter((RecordHistory.from_department == current_user.department)
-                       | (RecordHistory.to_department == current_user.department))
-               .order_by(RecordHistory.timestamp.desc()))
+                 .filter((RecordHistory.from_department == current_user.department)
+                         | (RecordHistory.to_department == current_user.department))
+                 .order_by(RecordHistory.timestamp.desc()))
     if action_filter:
         records_q = records_q.filter(RecordHistory.action_type == action_filter)
     records = records_q.all()
@@ -859,3 +860,38 @@ def forbidden(e):
 @bp.errorhandler(404)
 def not_found(e):
     return render_template("404.html"), 404
+
+
+@bp.route("/assigned")
+@login_required
+def assigned_documents():
+    records = (visible_documents(current_user.department)
+               .filter(Record.department == current_user.department)
+               .filter(Record.status == "Assigned")
+               .order_by(Record.updated_at.desc()).all())
+    dept_users = User.query.filter_by(department=current_user.department, is_deactivated=False).all()
+    return render_template("assigned.html", records=records, dept_users=dept_users)
+
+
+@bp.route("/documents/assign/<int:record_id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def assign_document(record_id):
+    record = db.session.get(Record, record_id) or abort(404)
+    data = request.get_json() or {}
+    assigned_to = data.get("assigned_to", "").strip()
+    remarks = data.get("remarks", "").strip()
+    if not assigned_to:
+        return jsonify(success=False, message="Please select a staff to assign.")
+    record.received_by = assigned_to
+    record.status = "Assigned"
+    record.updated_at = datetime.now(timezone.utc)
+    db.session.add(RecordHistory(
+        record_id=record.id, action_type="assigned",
+        from_department=current_user.department, to_department=current_user.department,
+        action_by=current_user.full_name, status="Assigned",
+        remarks=f"Assigned to {assigned_to}" + (f" \u2014 {remarks}" if remarks else ""),
+        timestamp=datetime.now(timezone.utc),
+    ))
+    db.session.commit()
+    return jsonify(success=True, message=f"Document assigned to {assigned_to}.")

@@ -189,16 +189,14 @@ tr:hover td { background: #FBF8F5; }
     </div>
     <div class="sb-nav">
         <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-gauge-high"></i><span class="nl">Dashboard</span></a>
-        <div class="nav-sec">Documents</div>
-        {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('main.add_document') }}"><i class="fa-solid fa-file-circle-plus"></i><span class="nl">New Document</span></a>
-        {% endif %}
-        <a href="{{ url_for('main.incoming_documents') }}"><i class="fa-solid fa-inbox"></i><span class="nl">Incoming</span></a>
-        <a href="{{ url_for('main.outgoing_documents') }}"><i class="fa-solid fa-paper-plane"></i><span class="nl">Outgoing</span></a>
-        <a href="{{ url_for('main.processing_documents') }}"><i class="fa-solid fa-gears"></i><span class="nl">Processing</span></a>
-        <a href="{{ url_for('main.archived_documents') }}"><i class="fa-solid fa-box-archive"></i><span class="nl">Closed</span></a>
-        <div class="nav-sec">Tracking</div>
-        <a href="{{ url_for('main.trace') }}"><i class="fa-solid fa-magnifying-glass-location"></i><span class="nl">Trace Document</span></a>
+        <div class="nav-sec">Document Menu</div>
+        <a href="{{ url_for('main.add_document') }}"><i class="fa-solid fa-file-circle-plus"></i><span class="nl">New </span></a>
+        <a href="{{ url_for('main.processing_documents') }}"><i class="fa-solid fa-folder-open"></i><span class="nl">Open</span></a>
+        <a href="{{ url_for('main.assigned_documents') }}"><i class="fa-solid fa-user-check"></i><span class="nl">Assigned</span></a>
+        <a href="{{ url_for('main.archived_documents') }}"><i class="fa-solid fa-circle-check"></i><span class="nl">Closed</span></a>
+        <a href="{{ url_for('main.incoming_documents') }}" id="incomingLink"><i class="fa-solid fa-download"></i><span class="nl">Receive</span><span class="nbadge" id="pendingBadge" style="display:none;"></span></a>
+        <a href="{{ url_for('main.outgoing_documents') }}"><i class="fa-solid fa-share-from-square"></i><span class="nl">Release</span></a>     
+        <a href="{{ url_for('main.trace') }}"><i class="fa-solid fa-magnifying-glass-location"></i><span class="nl">Trace</span></a>
         <div class="nav-sec">Analytics</div>
         <a href="{{ url_for('main.analytics') }}"><i class="fa-solid fa-chart-column"></i><span class="nl">Bottleneck Analytics</span></a>
         <a href="{{ url_for('main.reports') }}"><i class="fa-solid fa-chart-pie"></i><span class="nl">Reports</span></a>
@@ -291,6 +289,22 @@ function updateClock() {
     }
 }
 updateClock(); setInterval(updateClock, 1000);
+</script>
+
+<script>
+async function updatePendingBadge() {
+  try {
+    const res = await fetch('/api/pending-transfers');
+    const data = await res.json();
+    const badge = document.getElementById('pendingBadge');
+    if (badge) {
+      if (data.count > 0) { badge.textContent = data.count; badge.style.display = 'inline'; }
+      else { badge.style.display = 'none'; }
+    }
+  } catch(e) {}
+}
+updatePendingBadge();
+setInterval(updatePendingBadge, 30000);
 </script>
 </body>
 </html>
