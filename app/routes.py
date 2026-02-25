@@ -281,7 +281,6 @@ def delete_user(id):
 
 @bp.route("/add_document", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
 def add_document():
     dept_users = User.query.filter_by(department=current_user.department).all()
     document_type = DocumentType.query.all()
@@ -688,6 +687,7 @@ def trace():
 
 @bp.route("/analytics")
 @login_required
+@role_required("admin")
 def analytics():
     import statistics
     dept_durations = defaultdict(list)
@@ -716,6 +716,7 @@ def analytics():
 
 @bp.route("/reports")
 @login_required
+@role_required("admin")
 def reports():
     all_records = visible_documents(current_user.department).order_by(Record.date_received.desc()).all()
     total_docs = len(all_records)
