@@ -305,7 +305,7 @@ def add_document():
             implementing_office=current_user.department,
             date_received=date_received,
             released_by=current_user.full_name,
-            received_by=request.form.get("received_by", current_user.full_name),
+            received_by="",
             status=auto_status,
             priority=request.form.get("priority", "Normal"),
             remarks=request.form.get("remarks", ""),
@@ -401,9 +401,13 @@ def outgoing_documents():
     outgoing = (RecordHistory.query
                 .filter_by(action_type="transfer", from_department=current_user.department)
                 .order_by(RecordHistory.timestamp.desc()).all())
-    my_records = (visible_documents(current_user.department)
+
+    # Only show documents assigned to the current user that can be released
+    my_records = (Record.query
                   .filter(Record.department == current_user.department)
-                  .filter(Record.status.notin_(list(COMPLETED_STATUSES))).all())
+                  .filter(Record.received_by == current_user.full_name)
+                  .filter(Record.status == "Assigned")
+                  .all())
 
     pending_transfer_ids = set()
     received_transfer_ids = set()
