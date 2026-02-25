@@ -197,13 +197,13 @@ tr:hover td { background: #FBF8F5; }
         <a href="{{ url_for('main.incoming_documents') }}" id="incomingLink"><i class="fa-solid fa-download"></i><span class="nl">Receive</span><span class="nbadge" id="pendingBadge" style="display:none;"></span></a>
         <a href="{{ url_for('main.outgoing_documents') }}"><i class="fa-solid fa-share-from-square"></i><span class="nl">Release</span></a>     
         <a href="{{ url_for('main.trace') }}"><i class="fa-solid fa-magnifying-glass-location"></i><span class="nl">Trace</span></a>
+        {% if current_user.role == 'admin' %}
         <div class="nav-sec">Analytics</div>
         <a href="{{ url_for('main.analytics') }}"><i class="fa-solid fa-chart-column"></i><span class="nl">Bottleneck Analytics</span></a>
         <a href="{{ url_for('main.reports') }}"><i class="fa-solid fa-chart-pie"></i><span class="nl">Reports</span></a>
-        {% if current_user.role == 'admin' %}
         <div class="nav-sec">Administration</div>
         <a href="{{ url_for('main.users') }}"><i class="fa-solid fa-users"></i><span class="nl">Staff Members</span></a>
-        
+        <a href="{{ url_for('main.office_settings') }}"><i class="fa-solid fa-gear"></i><span class="nl">Office Settings</span></a>
         <a href="{{ url_for('main.activity_logs') }}"><i class="fa-solid fa-clipboard-list"></i><span class="nl">Activity Logs</span></a>
         {% endif %}
     </div>
