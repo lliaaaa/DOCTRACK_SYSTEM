@@ -3,20 +3,20 @@
 <div class="content">
   <div class="d-flex justify-content-between align-items-start mb-4" style="border-bottom:1px solid #EDE8E0;padding-bottom:12px;">
     <div>
-      <h1 class="dashboard-title">Outgoing Documents</h1>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Transfer documents from <strong>{{ current_user.department }}</strong> to another office</div>
+      <h1 class="dashboard-title">Release Documents</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Release documents assigned to you in <strong>{{ current_user.department }}</strong></div>
     </div>
   </div>
 
-  {% if current_user.role == 'admin' %}
   {% if records %}
   <div class="gov-card" style="border-left:3px solid #7A5700;margin-bottom:18px;">
     <div class="gov-card-header">
       <div class="ci"><i class="fa-solid fa-paper-plane"></i></div>
-      <h3>Transfer a Document</h3>
+      <h3>Documents Assigned to You</h3>
+      <span class="cc">{{ records|length }}</span>
     </div>
     <div style="background:#FEF9EC;border:1px solid #F5D86A;border-radius:5px;padding:8px 10px;font-size:12px;color:#7A5700;margin-bottom:12px;">
-      <i class="fa fa-circle-info me-1"></i> Select a document below to transfer it to another department. The receiving office will see it in their Incoming list to confirm receipt.
+      <i class="fa fa-circle-info me-1"></i> You can only release documents assigned to you. The receiving office will see it in their Incoming list to confirm receipt.
     </div>
     <div style="overflow-x:auto;">
     <table>
@@ -34,7 +34,7 @@
             <span class="badge bg-warning" style="font-size:11px;"><i class="fa fa-clock me-1"></i>Pending Receipt</span>
             {% else %}
             <button class="btn-sm-action ba-transfer transfer-btn" data-record-id="{{ r.id }}" data-title="{{ r.title }}">
-              <i class="fa fa-paper-plane me-1"></i>Transfer
+              <i class="fa fa-paper-plane me-1"></i>Release
             </button>
             {% endif %}
           </td>
@@ -46,9 +46,8 @@
   </div>
   {% else %}
   <div style="background:#F5F0E8;border:1px solid #DED8CF;border-radius:6px;padding:12px 16px;font-size:12px;color:var(--muted);margin-bottom:18px;">
-    <i class="fa fa-folder-open me-2"></i>No documents currently in your department to transfer.
+    <i class="fa fa-folder-open me-2"></i>No documents currently assigned to you for release.
   </div>
-  {% endif %}
   {% endif %}
 
   <!-- TRANSFER HISTORY -->
@@ -98,7 +97,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-paper-plane me-2"></i>Transfer Document</h5>
+        <h5 class="modal-title"><i class="fa fa-paper-plane me-2"></i>Release Document</h5>
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
